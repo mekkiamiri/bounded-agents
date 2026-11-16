@@ -14,25 +14,25 @@ final class Frontieres {
     private Frontieres() {
     }
 
-    /** Amont du context map : la Commande ne connaît personne. */
+    /** Amont du context map (service hôte ouvert) : la Commande ne connaît personne. */
     static final ArchRule COMMANDE_NE_CONNAIT_PERSONNE = noClasses()
             .that().resideInAPackage("..commande..")
             .should().dependOnClassesThat().resideInAnyPackage("..facturation..", "..livraison..")
             .because("la Commande est en amont : elle publie, elle ne consomme pas");
 
-    /** Partenariat : la Livraison lit le contrat publié de la Commande, rien d'autre. */
-    static final ArchRule LIVRAISON_LIT_SEULEMENT_LE_CONTRAT = noClasses()
+    /** Conformiste : la Livraison consomme le langage publié de la Commande (commande.api), et rien d'autre. */
+    static final ArchRule LIVRAISON_CONFORMISTE = classes()
             .that().resideInAPackage("..livraison..")
-            .should().dependOnClassesThat().resideInAnyPackage(
-                    "..commande.domaine..", "..commande.outils..", "..facturation..")
-            .because("partenariat Commande ↔ Livraison : seul le contrat commande.api est partagé");
+            .should().onlyDependOnClassesThat().resideInAnyPackage(
+                    "..livraison..", "..commande.api..", "..agent..", "java..")
+            .because("la Livraison est conformiste au langage publié de la Commande ; chemins séparés avec la Facturation");
 
     /** Client-fournisseur avec couche anticorruption : seule la couche acl de la Facturation voit la Commande. */
     static final ArchRule FACTURATION_PASSE_PAR_L_ACL = noClasses()
             .that().resideInAPackage("..facturation..")
             .and().resideOutsideOfPackage("..facturation.acl..")
             .should().dependOnClassesThat().resideInAnyPackage("..commande..", "..livraison..")
-            .because("la Facturation ne parle le langage de la Commande que dans sa couche anticorruption");
+            .because("client-fournisseur : la Facturation ne lit la Commande que dans sa couche anticorruption ; chemins séparés avec la Livraison");
 
     static final ArchRule ACL_NE_LIT_QUE_LE_CONTRAT = classes()
             .that().resideInAPackage("..facturation.acl..")
@@ -55,6 +55,18 @@ final class Frontieres {
             .that().areAnnotatedWith(OutilAgent.class)
             .should().beDeclaredInClassesThat().resideInAPackage("..outils..")
             .because("les outils d'un sous-agent sont rangés dans <contexte>.outils");
+
+    /** Spring AI reste dans l'adaptateur ia : le domaine et les outils sont sans framework. */
+    static final ArchRule FRAMEWORK_DANS_L_ADAPTATEUR = noClasses()
+            .that().resideOutsideOfPackage("..ia..")
+            .should().dependOnClassesThat().resideInAPackage("org.springframework..")
+            .because("seul l'adaptateur ia connaît Spring AI");
+
+    /** Les agents ne touchent au domaine qu'à travers les outils du catalogue. */
+    static final ArchRule AGENTS_PASSENT_PAR_LES_OUTILS = noClasses()
+            .that().resideInAPackage("..ia..")
+            .should().dependOnClassesThat().resideInAnyPackage("..domaine..", "..acl..", "..api..")
+            .because("un agent ne voit du domaine que ses outils");
 
     static final ArchRule PAS_DE_CYCLE = slices()
             .matching("io.github.mekkiamiri.boundedagents.(*)..")

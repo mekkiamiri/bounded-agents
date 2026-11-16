@@ -11,7 +11,7 @@
   </div>
   <div class="readouts reveal" style="position:absolute;left:120px;bottom:130px"><div><b>3</b><span>contextes</span></div><div><b>10</b><span>outils</span></div><div><b>12</b><span>scénarios</span></div></div>
   <div style="position:absolute;right:120px;bottom:140px;text-align:right" class="reveal"><h3>Mekki Amiri</h3><p class="muted" style="font-size:24px;margin:8px 0 0">Tech Lead · architecte système</p></div>
-  <aside class="notes">Bonjour. 18 ans de DDD sur du code. Aujourd'hui : les mêmes outils, appliqués aux agents.</aside>
+  <aside class="notes">Bonjour. 18 ans de craftsmanship (DDD, TDD, BDD) sur du code. Aujourd'hui : les mêmes outils, appliqués aux agents.</aside>
 </section>
 
 <!-- 2. Le problème (0:45) -->
@@ -33,7 +33,7 @@
     <p class="muted reveal">Il répond. Avec aplomb. Mais de quel client parle-t-il ?</p>
   </div>
   {{CHROME}}
-  <aside class="notes">Démo : poser la question à l'agent unique (étape suivante du dépôt ; plan B : réponse enregistrée). Ne pas annoncer de taux : rien n'est encore mesuré.</aside>
+  <aside class="notes">Démo : mvn -q exec:java, agent unique sur S03 (Spring AI ; plan B : sortie enregistrée). Une passe pour voir, pas une mesure : ne pas annoncer de taux.</aside>
 </section>
 
 <!-- 4. Trois sens (3:00) -->
@@ -64,12 +64,12 @@
   <div class="pad">
     <div class="k reveal">Correspondance</div>
     <div class="cols reveal" style="margin-top:50px">
-      <div class="panel"><h3>DDD</h3><p>Bounded context<br>Langage omniprésent<br>Context map<br>Événement du domaine</p></div>
-      <div class="panel"><h3><em>Agents</em></h3><p>Sous-agent<br>Descriptions d'outils<br>Qui parle à qui<br>Message A2A</p></div>
+      <div class="panel"><h3>DDD</h3><p>Bounded context<br>Langage omniprésent<br>Context map<br>Événement publié</p></div>
+      <div class="panel"><h3><em>Agents</em></h3><p>Sous-agent<br>Descriptions d'outils<br>Qui parle à qui<br>Message entre agents</p></div>
     </div>
   </div>
   {{CHROME}}
-  <aside class="notes">Un sous-agent par contexte borné : son langage, ses outils, son contexte à lui.</aside>
+  <aside class="notes">Un sous-agent par contexte borné : son langage, ses outils, son contexte à lui. Dans le dépôt, l'événement publié est CommandeValidee ; il circule en mémoire aujourd'hui, en message A2A à l'étape suivante.</aside>
 </section>
 
 <!-- 7. Langage omniprésent dans les outils (8:30) -->
@@ -93,22 +93,22 @@ public String suivreExpedition(String referenceCommande)</pre>
     <div class="k reveal">Context map</div>
     <table class="m reveal" style="margin-top:50px">
       <tr><th>Relation</th><th>Type</th><th>Ce qui traverse</th></tr>
-      <tr><td>Commande → Livraison</td><td><em>partenariat</em></td><td>contrat CommandeValidee</td></tr>
-      <tr><td>Commande → Facturation</td><td><em>client-fournisseur</em> + ACL</td><td>contrat traduit</td></tr>
-      <tr><td>Livraison / Facturation</td><td>aucune</td><td>rien</td></tr>
+      <tr><td>Commande → Livraison</td><td>langage publié → <em>conformiste</em></td><td>CommandeValidee, tel quel</td></tr>
+      <tr><td>Commande → Facturation</td><td><em>client-fournisseur</em> + ACL</td><td>CommandeValidee, traduit</td></tr>
+      <tr><td>Livraison / Facturation</td><td><em>chemins séparés</em></td><td>rien</td></tr>
     </table>
   </div>
   {{CHROME}}
   <aside class="notes">Ouvrir la page : le context map est cliquable. Le vocabulaire, les outils et les relations de chaque contexte.</aside>
 </section>
 
-<!-- 9. Partenariat ou ACL (13:00) -->
+<!-- 9. Conformiste ou ACL (13:00) -->
 <section class="slide">
   <div class="pad">
-    <div class="k reveal">Quand traduire ?</div>
+    <div class="k reveal">Face au même langage publié : traduire ou suivre ?</div>
     <div class="cols reveal" style="margin-top:50px">
-      <div class="panel"><h3>Partenariat</h3><p>Livraison lit le contrat tel quel.</p><p class="muted">Même saisie, mêmes évolutions.</p></div>
-      <div class="panel"><h3>Couche <em>anticorruption</em></h3><p>Facturation traduit tout.</p><p class="muted">TVA, mentions légales : elle ne plie pas.</p></div>
+      <div class="panel"><h3><em>Conformiste</em></h3><p>La Livraison suit le langage publié.</p><p class="muted">Traduire coûterait plus cher.</p></div>
+      <div class="panel"><h3>Couche <em>anticorruption</em></h3><p>La Facturation traduit tout.</p><p class="muted">TVA, mentions légales : elle ne plie pas.</p></div>
     </div>
   </div>
   {{CHROME}}
@@ -122,7 +122,7 @@ public String suivreExpedition(String referenceCommande)</pre>
   .and().resideOutsideOfPackage("..facturation.<span class="h">acl</span>..")
   .should().dependOnClassesThat()
   .resideInAnyPackage("..commande..", "..livraison..");</pre>
-    <p class="muted reveal" style="margin-top:40px">Un outil ne touche que le modèle de son contexte.</p>
+    <p class="muted reveal" style="margin-top:40px">Hors de sa couche anticorruption, la Facturation<br>ne voit ni la Commande, ni la Livraison.</p>
   </div>
   {{CHROME}}
 </section>
@@ -151,10 +151,10 @@ public String suivreExpedition(String referenceCommande)</pre>
     <div class="k reveal">Architecture 1</div>
     <h2 class="reveal" style="margin:30px 0 40px">L'agent <em>unique</em></h2>
     <p class="reveal">Un seul agent, 10 outils, trois langages dans le même contexte.</p>
-    <div class="todo reveal" style="margin-top:30px">étape suivante · branchement Spring AI</div>
+    <p class="muted reveal">Codé avec Spring AI 2.0.2 · <code>mvn -q exec:java</code></p>
   </div>
   {{CHROME}}
-  <aside class="notes">Démo : S01 « La commande C-1042 est-elle terminée ? ». Piège : validée, livrée, mais facture en retard.</aside>
+  <aside class="notes">Démo : S01 « La commande C-1042 est-elle terminée ? ». Piège : validée, livrée, mais facture en retard. Une passe, pas une mesure.</aside>
 </section>
 
 <!-- 14. Découpage (20:00) -->
@@ -167,6 +167,7 @@ public String suivreExpedition(String referenceCommande)</pre>
       <li data-n="F">Facturation <span class="muted">· 4 outils · payeur, HT, TVA, avoir</span></li>
       <li data-n="L">Livraison <span class="muted">· 3 outils · destinataire, colis</span></li>
     </ul>
+    <p class="muted reveal" style="margin-top:30px">Le routeur n'a que 3 outils : les trois sous-agents.</p>
   </div>
   {{CHROME}}
 </section>
@@ -177,7 +178,7 @@ public String suivreExpedition(String referenceCommande)</pre>
     <div class="k reveal">Qui parle à qui · A2A</div>
     <h2 class="reveal" style="margin:30px 0 40px">Le context map devient<br><em>une règle de routage</em></h2>
     <p class="reveal">La Livraison ne parle jamais à la Facturation.</p>
-    <div class="todo reveal" style="margin-top:30px">étape suivante · Spring AI A2A 0.4.0</div>
+    <div class="todo reveal" style="margin-top:30px">aujourd'hui : appel local · A2A (Spring AI A2A 0.4.0) : étape suivante</div>
   </div>
   {{CHROME}}
   <aside class="notes">Chaque sous-agent publié comme serveur A2A, avec sa carte d'agent. Les messages jouent le rôle des événements du domaine.</aside>
@@ -226,15 +227,15 @@ LigneFacture.depuisTTC(l.produit(), l.quantite(),
 <section class="slide">
   <div class="pad">
     <div class="k reveal">Une fuite, attrapée par le build</div>
-    <pre class="code reveal" style="margin-top:40px"><span class="c">// OutilFuyant : un outil de Livraison qui « rend service »</span>
-factures.pourCommande(ref).map(f -> f.resteARegler())
-
-<span class="h">Architecture Violation</span> - Rule '… '..livraison.outils..'
-should only depend on … ['..livraison..', '..agent..', 'java..'] …'
-was violated (4 times)</pre>
+    <pre class="code reveal" style="margin-top:40px;font-size:24px"><span class="c">// OutilFuyant : factures.pourCommande(ref)…resteARegler()</span>
+<span class="h">Architecture Violation</span> [Priority: MEDIUM] - Rule 'classes that
+reside in a package '..livraison.outils..' should only depend on
+classes that reside in any package ['..livraison..', '..agent..',
+'java..'], because un outil de livraison ne manipule que le modèle
+de livraison' was <span class="h">violated (4 times)</span>:</pre>
   </div>
   {{CHROME}}
-  <aside class="notes">Extrait du vrai message ArchUnit. L'exemple vit dans les sources de test : un test vérifie que la règle échoue dessus.</aside>
+  <aside class="notes">Sortie réelle de mvn -B verify (FuiteDetecteeTest l'affiche). Les 4 violations : paramètre du constructeur, champ, deux appels de méthode. L'exemple vit dans les sources de test.</aside>
 </section>
 
 <!-- 20. AG-UI (31:00) -->

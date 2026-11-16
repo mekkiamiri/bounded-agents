@@ -43,9 +43,12 @@ public final class JeuDeDonnees {
     private final Clock horloge = Clock.fixed(DATE_DE_REFERENCE.atStartOfDay(ZoneId.of("Europe/Paris")).toInstant(),
             ZoneId.of("Europe/Paris"));
     private final EmissionDesFactures emission = new EmissionDesFactures(commandes, new TraducteurCommande(payeurs), factures);
-    private final PreparationDepuisCommande preparation = new PreparationDepuisCommande(commandes, expeditions);
+    private final PreparationDepuisCommande preparation = new PreparationDepuisCommande(expeditions);
 
     private JeuDeDonnees() {
+        // Le context map, câblé : la Commande publie, la Facturation (via son ACL) et la Livraison s'abonnent.
+        commandes.abonner(emission::surCommandeValidee);
+        commandes.abonner(preparation::surCommandeValidee);
     }
 
     public static JeuDeDonnees brulerie() {
@@ -66,8 +69,8 @@ public final class JeuDeDonnees {
 
         // C-1033 : particulier, payée, puis avoir partiel.
         valider(new Commande("C-1033", lou, List.of(ligne("Colombie Huila 500 g", Categorie.CAFE, 2, "11.50")), 0,
-                LocalDate.of(2026, 10, 20), new ConsignesDeLivraison("Lou Garnier", "8 impasse du Moulin, 38000 Grenoble", "2026-10-23 matin")));
-        Facture f1033 = facturer("C-1033", LocalDate.of(2026, 10, 21));
+                LocalDate.of(2026, 10, 20), new ConsignesDeLivraison("Lou Garnier", "8 impasse du Moulin, 38000 Grenoble", "2026-10-23 matin")), LocalDate.of(2026, 10, 21));
+        Facture f1033 = facturer("C-1033");
         f1033.encaisser(new Paiement(new BigDecimal("23.00"), LocalDate.of(2026, 10, 21)));
         Expedition e1033 = expedier("C-1033", LocalDate.of(2026, 10, 22));
         e1033.livrer(LocalDate.of(2026, 10, 23));
@@ -75,23 +78,23 @@ public final class JeuDeDonnees {
 
         // C-1042 : commandée par Inès, payée par Studio Pivot, reçue par l'accueil. Livrée, facture en retard.
         valider(new Commande("C-1042", ines, List.of(ligne("Éthiopie Guji 1 kg", Categorie.CAFE, 3, "24.00")), 10,
-                LocalDate.of(2026, 11, 2), avecCreneau(accueilPivot, "2026-11-06 matin")));
-        facturer("C-1042", LocalDate.of(2026, 11, 3));
+                LocalDate.of(2026, 11, 2), avecCreneau(accueilPivot, "2026-11-06 matin")), LocalDate.of(2026, 11, 3));
+        facturer("C-1042");
         expedier("C-1042", LocalDate.of(2026, 11, 5)).livrer(LocalDate.of(2026, 11, 6));
 
         // C-1057 : expédiée, facture partiellement payée.
         valider(new Commande("C-1057", ines, List.of(
                 ligne("Moulin manuel acier", Categorie.MATERIEL, 1, "89.00"),
                 ligne("Brésil Cerrado 1 kg", Categorie.CAFE, 2, "21.00")), 0,
-                LocalDate.of(2026, 12, 1), avecCreneau(accueilPivot, "2026-12-11 après-midi")));
-        facturer("C-1057", LocalDate.of(2026, 12, 2))
+                LocalDate.of(2026, 12, 1), avecCreneau(accueilPivot, "2026-12-11 après-midi")), LocalDate.of(2026, 12, 2));
+        facturer("C-1057")
                 .encaisser(new Paiement(new BigDecimal("50.00"), LocalDate.of(2026, 12, 5)));
         expedier("C-1057", LocalDate.of(2026, 12, 9));
 
         // C-1061 : payée, mais échec de présentation du colis.
         valider(new Commande("C-1061", paul, List.of(ligne("Mélange Fabrique 1 kg", Categorie.CAFE, 4, "19.50")), 0,
-                LocalDate.of(2026, 12, 3), new ConsignesDeLivraison("Paul Ferrand", "Atelier 3, 17 rue Neuve, 42000 Saint-Étienne", "2026-12-08 matin")));
-        facturer("C-1061", LocalDate.of(2026, 12, 4))
+                LocalDate.of(2026, 12, 3), new ConsignesDeLivraison("Paul Ferrand", "Atelier 3, 17 rue Neuve, 42000 Saint-Étienne", "2026-12-08 matin")), LocalDate.of(2026, 12, 4));
+        facturer("C-1061")
                 .encaisser(new Paiement(new BigDecimal("78.00"), LocalDate.of(2026, 12, 4)));
         expedier("C-1061", LocalDate.of(2026, 12, 7))
                 .echecDePresentation(LocalDate.of(2026, 12, 8), "destinataire absent", "2026-12-12 matin");
@@ -109,17 +112,18 @@ public final class JeuDeDonnees {
         return new ConsignesDeLivraison(c.nomDestinataire(), c.adresse(), creneau);
     }
 
-    private void valider(Commande c) {
-        c.valider();
+    private void valider(Commande c, LocalDate dateValidation) {
         commandes.enregistrer(c);
+        commandes.valider(c.numero(), dateValidation);
     }
 
-    private Facture facturer(String reference, LocalDate date) {
-        return emission.emettre(reference, date).orElseThrow();
+    /** La facture a été émise par l'abonnement à l'événement CommandeValidee. */
+    private Facture facturer(String reference) {
+        return factures.pourCommande(reference).orElseThrow();
     }
 
     private Expedition expedier(String reference, LocalDate date) {
-        Expedition e = preparation.preparer(reference).orElseThrow();
+        Expedition e = expeditions.pourCommande(reference).orElseThrow();
         e.expedier(date);
         return e;
     }

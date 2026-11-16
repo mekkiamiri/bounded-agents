@@ -66,22 +66,22 @@ footer{margin-top:70px;border-top:1px solid var(--line);padding-top:18px;font-si
   <h2>Le context map</h2>
   <div class="grid">
     <svg viewBox="0 0 560 430" role="img" aria-label="Context map : Commande, Livraison, Facturation">
-      <g class="edge" data-rel="partenariat">
+      <g class="edge" data-rel="conformiste">
         <path class="hit" d="M200 150 L130 280"/>
         <path class="v" d="M196 150 L126 280"/><path class="v" d="M206 152 L136 282"/>
-        <text x="40" y="215">partenariat</text>
+        <text x="10" y="215">conformiste</text>
       </g>
       <g class="edge" data-rel="client-fournisseur">
         <path class="hit" d="M360 150 L430 280"/>
         <path class="v" d="M360 150 L430 280"/>
         <text x="410" y="215">client-fournisseur</text>
       </g>
-      <g class="edge" data-rel="aucune">
+      <g class="edge" data-rel="separes">
         <path class="hit" d="M215 345 L345 345"/>
         <path class="v" d="M215 345 L345 345" stroke-dasharray="6 8"/>
-        <text x="236" y="372">aucune relation</text>
+        <text x="222" y="372">chemins séparés</text>
       </g>
-      <g class="node" data-ctx="commande"><rect x="170" y="40" width="220" height="110" rx="2"/><text x="280" y="98" text-anchor="middle">Commande</text><text class="sub" x="280" y="126" text-anchor="middle">amont · acheteur</text></g>
+      <g class="node" data-ctx="commande"><rect x="170" y="40" width="220" height="110" rx="2"/><text x="280" y="98" text-anchor="middle">Commande</text><text class="sub" x="280" y="126" text-anchor="middle">amont · langage publié</text></g>
       <g class="node" data-ctx="livraison"><rect x="20" y="290" width="195" height="110" rx="2"/><text x="117" y="348" text-anchor="middle">Livraison</text><text class="sub" x="117" y="376" text-anchor="middle">destinataire · colis</text></g>
       <g class="node" data-ctx="facturation"><rect x="345" y="290" width="195" height="110" rx="2"/><text x="442" y="348" text-anchor="middle">Facturation</text><text class="sub" x="442" y="376" text-anchor="middle">payeur · HT/TVA</text></g>
       <g class="acl edge" data-rel="client-fournisseur"><rect x="400" y="270" width="64" height="24"/><text x="432" y="287" text-anchor="middle">ACL</text></g>
@@ -103,6 +103,9 @@ footer{margin-top:70px;border-top:1px solid var(--line);padding-top:18px;font-si
   <div class="chips"><button id="exFuite">Exemple de fuite (écrit à la main)</button><button id="exRef">Réponse de référence</button></div>
   <div class="box" id="note"></div>
 
+  <h2>La démo Spring AI</h2>
+  <p class="lead">Le dépôt branche déjà les deux architectures sur un modèle avec Spring AI 2.0.2 : l'agent unique (10 outils) et l'agent découpé (un routeur qui consulte trois sous-agents, un par contexte). <code>mvn -q exec:java</code> rejoue S01 à S03 avec le modèle de votre choix. A2A et AG-UI : étape suivante.</p>
+
   <h2>Les mesures</h2>
   <p class="muted">Même modèle, mêmes outils, mêmes données ; seul le découpage change. Rien n'est encore mesuré.</p>
   <table>
@@ -111,64 +114,55 @@ footer{margin-top:70px;border-top:1px solid var(--line);padding-top:18px;font-si
     <tr><td>Tokens par scénario</td><td><span class="todo">à mesurer</span></td><td><span class="todo">à mesurer</span></td></tr>
     <tr><td>Erreurs de vocabulaire</td><td><span class="todo">à mesurer</span></td><td><span class="todo">à mesurer</span></td></tr>
   </table>
-  <p class="muted" style="margin-top:14px">Ce qui tourne déjà : le domaine, les outils par contexte, la couche anticorruption, les frontières ArchUnit et les 12 scénarios vérifiés par les tests. Spring AI, A2A et AG-UI : étape suivante.</p>
+  <p class="muted" style="margin-top:14px">Ce qui tourne déjà : le domaine, les outils par contexte, la couche anticorruption, les frontières ArchUnit et les 12 scénarios vérifiés par les tests. Agent unique et agent découpé branchés avec Spring AI (S01 à S03), sans résultat publié. A2A et AG-UI : étape suivante.</p>
 
   <footer>
     <a href="https://github.com/mekkiamiri/bounded-agents">Dépôt</a> · <a href="slides/">Slides</a> · Mekki Amiri · Apache-2.0 · données fictives
   </footer>
 </main>
+<script src="donnees.js"></script>
 <script>
+// Outils, glossaires et scénarios : docs/donnees.js, généré depuis le code (DonneesPage.java) et vérifié en CI.
+const D = window.DONNEES, JEU = D.jeu;
 const CTX = {
-  commande: {
-    nom: "Commande", role: "Amont : publie les commandes validées (commande.api.CommandeValidee).",
-    glossaire: [["Acheteur","qui passe la commande depuis son compte"],["Montant","TTC, remise comprise"],["Statut","brouillon, validée, annulation demandée, annulée"],["Consignes de livraison","saisies ici, possédées par la Livraison"]],
-    outils: [['consulterCommande',"Donne l'acheteur, les lignes du panier, la remise et le montant TTC d'une commande."],['statutCommande',"Donne le statut de la commande. Ne dit rien du paiement ni de l'acheminement."],['demanderAnnulation',"Enregistre une demande d'annulation ; une commande validée reste à confirmer."]],
-    relations: ["→ Livraison : partenariat", "→ Facturation : client-fournisseur (ACL côté Facturation)"]
-  },
-  facturation: {
-    nom: "Facturation", role: "Aval : ne voit la Commande qu'à travers sa couche anticorruption.",
-    glossaire: [["Payeur","entité qui reçoit la facture et la règle"],["Adresse de facturation","siège légal du payeur"],["Statut","émise, partiellement payée, payée, en retard"],["Avoir","annule tout ou partie d'une facture"]],
-    outils: [['consulterFacture',"Payeur, adresse de facturation, HT, TVA, TTC, échéance, statut de paiement."],['resteARegler',"Montant TTC qui reste à régler par le payeur."],['listerAvoirs',"Avoirs émis sur la facture (montant, date, motif)."],['emettreFacture',"Émet la facture d'une commande validée, via la couche anticorruption."]],
-    relations: ["← Commande : client-fournisseur, couche anticorruption (facturation.acl)", "Livraison : aucune relation"]
-  },
-  livraison: {
-    nom: "Livraison", role: "Partenaire de la Commande : lit son contrat publié sans traduction lourde.",
-    glossaire: [["Destinataire","qui réceptionne le colis"],["Adresse de livraison","point de remise, modifiable avant départ"],["Statut","à préparer, expédié, livré, en échec de présentation, arrêté"],["Échec de présentation","colis non remis (destinataire absent…)"]],
-    outils: [['suivreExpedition',"Destinataire, adresse de livraison, créneau, statut, motif d'échec."],['modifierAdresseLivraison',"Change l'adresse de livraison tant que le colis n'est pas parti."],['arreterExpedition',"Arrête l'acheminement si le colis n'est pas parti."]],
-    relations: ["↔ Commande : partenariat (commande.api)", "Facturation : aucune relation"]
-  }
+  commande: { nom: "Commande", role: "Amont, service hôte ouvert : publie l'événement CommandeValidee dans son langage publié (commande.api).",
+    relations: ["→ Livraison : la Livraison est conformiste au langage publié", "→ Facturation : client-fournisseur, couche anticorruption côté Facturation"] },
+  facturation: { nom: "Facturation", role: "Aval, client de la Commande : ne la voit qu'à travers sa couche anticorruption.",
+    relations: ["← Commande : client-fournisseur, couche anticorruption (facturation.acl)", "Livraison : chemins séparés"] },
+  livraison: { nom: "Livraison", role: "Aval, conformiste : consomme l'événement publié tel quel, sans traduction.",
+    relations: ["← Commande : conformiste au langage publié (commande.api)", "Facturation : chemins séparés"] }
 };
 const REL = {
-  "partenariat": ["Partenariat · Commande ↔ Livraison","Les deux équipes font évoluer ensemble le contrat CommandeValidee (destinataire, adresse, créneau saisis à la commande).","livraison.domaine.PreparationDepuisCommande","LIVRAISON_LIT_SEULEMENT_LE_CONTRAT : la Livraison ne lit que commande.api, jamais le modèle interne ni la Facturation."],
+  "conformiste": ["Langage publié → conformiste · Commande → Livraison","La Commande expose un service hôte ouvert et publie l'événement CommandeValidee. La Livraison le consomme tel quel : si le langage publié change, elle suit.","livraison.domaine.PreparationDepuisCommande","LIVRAISON_CONFORMISTE : la Livraison ne dépend que d'elle-même, de commande.api et des outils d'agent."],
   "client-fournisseur": ["Client-fournisseur + couche anticorruption · Commande → Facturation","La Facturation traduit : acheteur (compte) → payeur ; ligne TTC remisée → HT + TVA (5,5 % café, 20 % matériel). Elle refuse ce qu'elle ne sait pas traduire.","facturation.acl.TraducteurCommande","FACTURATION_PASSE_PAR_L_ACL et ACL_NE_LIT_QUE_LE_CONTRAT : hors de facturation.acl, aucune classe de la Facturation ne voit la Commande."],
-  "aucune": ["Aucune relation · Livraison / Facturation","Un sous-agent Livraison ne répond jamais sur un paiement, et inversement. C'est au routeur d'interroger les deux.","—","Les règles ArchUnit interdisent toute dépendance dans les deux sens."]
+  "separes": ["Chemins séparés · Livraison / Facturation","Aucune intégration : un sous-agent Livraison ne répond jamais sur un paiement, et inversement. C'est au routeur d'interroger les deux.","—","LIVRAISON_CONFORMISTE et FACTURATION_PASSE_PAR_L_ACL interdisent toute dépendance dans les deux sens."]
 };
 const MOTS = {
   "client": ["acheteur : qui passe la commande","payeur : qui reçoit la facture et la règle","destinataire : qui réceptionne le colis"],
   "adresse": ["(aucune : consignes transmises à la Livraison)","adresse de facturation : siège légal du payeur","adresse de livraison : point de remise"],
-  "statut": ["brouillon · validée · annulation demandée · annulée","émise · partiellement payée · payée · en retard","à préparer · expédié · livré · en échec de présentation · arrêté"],
-  "montant": ["TTC, remise comprise","HT + TVA = TTC ; reste à régler","(aucun)"],
-  "annuler": ["demander l'annulation","émettre un avoir","arrêter l'acheminement (avant départ)"],
+  "statut": ["brouillon · validée · annulation demandée · annulée","émise · partiellement payée · payée · en retard · annulée par avoir","à préparer · expédié · livré · en échec de présentation · arrêté"],
+  "montant": ["TTC, remise comprise","HT + TVA = TTC ; avoirs ; reste à régler","(aucun)"],
+  "annuler": ["demander l'annulation, puis la confirmer ou la refuser","émettre un avoir","arrêter l'acheminement (avant départ)"],
   "échec": ["(aucun)","(aucun : on dit « en retard »)","échec de présentation"]
 };
 const FUITES_EXEMPLES = {
   S01: "Oui, elle est terminée : le client a reçu sa commande le 6 novembre.",
   S02: "L'adresse du client est 12 rue des Lilas, 69003 Lyon.",
   S03: "Le client est Studio Pivot SAS.",
-  S06: "La commande C-1061 est en échec : le paiement a sans doute été refusé, le client doit le relancer."
+  S06: "La commande C-1061 est en échec : le paiement a sans doute été refusé, le client doit le relancer.",
+  S12: "Le montant est de 164,80 € TTC."
 };
-const JEU = {"version": "v0 · 16/11/2026", "fuites_globales": ["client", "clients"], "scenarios": [{"id": "S01", "question": "La commande C-1042 est-elle terminée ?", "piege": "« Terminée » n'existe dans aucun contexte. La Commande dit « validée », la Livraison « livrée », la Facturation « en retard » : un agent qui ne regarde qu'un statut répond « oui ».", "contextes": ["commande", "livraison", "facturation"], "reponse_attendue": "Pas entièrement. Côté Commande, C-1042 est validée. Côté Livraison, le colis a été livré le 2026-11-06 à Karim Benali (accueil). Côté Facturation, la facture F-1042 est en retard : 64,80 € TTC restent à régler, échéance dépassée depuis le 2026-12-03.", "doit_contenir": [["livré", "livrée"], ["en retard"], ["64,80"]], "ne_doit_pas_contenir": ["oui, elle est terminée", "commande terminée", "entièrement terminée"], "fuites": ["statut terminé"], "verifications": [{"outil": "statutCommande", "arguments": ["C-1042"], "contient": "commande validée"}, {"outil": "suivreExpedition", "arguments": ["C-1042"], "contient": "colis livré le 2026-11-06"}, {"outil": "consulterFacture", "arguments": ["C-1042"], "contient": "facture en retard"}]}, {"id": "S02", "question": "Quelle est l'adresse du client de la commande C-1042 ?", "piege": "« Adresse » a deux sens : adresse de livraison (Livraison, l'accueil d'un bureau) et adresse de facturation (Facturation, le siège du payeur). Ici elles diffèrent.", "contextes": ["livraison", "facturation"], "reponse_attendue": "Il y a deux adresses différentes : l'adresse de livraison est 4 quai Rambaud, 69002 Lyon (accueil, destinataire Karim Benali) ; l'adresse de facturation du payeur Studio Pivot SAS est 12 rue des Lilas, 69003 Lyon.", "doit_contenir": [["quai rambaud"], ["rue des lilas"]], "ne_doit_pas_contenir": [], "fuites": ["adresse du client"], "verifications": [{"outil": "suivreExpedition", "arguments": ["C-1042"], "contient": "adresse de livraison : 4 quai Rambaud, 69002 Lyon"}, {"outil": "consulterFacture", "arguments": ["C-1042"], "contient": "adresse de facturation : 12 rue des Lilas, 69003 Lyon"}]}, {"id": "S03", "question": "Qui est le client de la commande C-1042 ?", "piege": "« Client » a trois sens : l'acheteur (Commande), le payeur (Facturation), le destinataire (Livraison). Ce sont trois personnes différentes.", "contextes": ["commande", "facturation", "livraison"], "reponse_attendue": "Trois rôles, trois personnes : l'acheteur est Inès Morel (compte A-17), le payeur est Studio Pivot SAS, le destinataire est Karim Benali à l'accueil.", "doit_contenir": [["inès morel"], ["studio pivot"], ["karim benali"]], "ne_doit_pas_contenir": [], "fuites": [], "verifications": [{"outil": "consulterCommande", "arguments": ["C-1042"], "contient": "par l'acheteur Inès Morel (compte A-17)"}, {"outil": "consulterFacture", "arguments": ["C-1042"], "contient": "Payeur : Studio Pivot SAS"}, {"outil": "suivreExpedition", "arguments": ["C-1042"], "contient": "Destinataire : Karim Benali (accueil)"}]}, {"id": "S04", "question": "Combien reste-t-il à payer sur la commande C-1057 ?", "piege": "Le « montant » de la Commande (131,00 € TTC) n'est pas ce qui reste dû ; la Facturation parle aussi en HT (113,98 €).", "contextes": ["facturation"], "reponse_attendue": "81,00 € TTC restent à régler sur la facture F-1057 (131,00 € TTC, 50,00 € déjà réglés), échéance 2027-01-01.", "doit_contenir": [["81,00"]], "ne_doit_pas_contenir": ["113,98", "131,00 € restent", "reste 131,00"], "fuites": [], "verifications": [{"outil": "resteARegler", "arguments": ["C-1057"], "contient": "reste à régler 81,00 € TTC sur 131,00 € TTC"}, {"outil": "consulterFacture", "arguments": ["C-1057"], "contient": "113,98 € HT"}]}, {"id": "S05", "question": "Peut-on annuler la commande C-1057 ?", "piege": "La Commande accepte une demande d'annulation, mais seule la Livraison sait que le colis est parti. Un agent qui appelle seulement demanderAnnulation annonce une annulation qui n'aura pas lieu.", "contextes": ["commande", "livraison"], "reponse_attendue": "Pas directement : le colis est expédié depuis le 2026-12-09, son acheminement ne peut plus être arrêté. La Commande peut enregistrer une demande d'annulation, qui se traitera comme un retour à réception ; la Facturation émettra ensuite un avoir.", "doit_contenir": [["expédié", "expédiée", "parti"], ["retour"]], "ne_doit_pas_contenir": ["commande annulée", "annulation confirmée", "oui, elle est annulée"], "fuites": [], "verifications": [{"outil": "arreterExpedition", "arguments": ["C-1057"], "contient": "arrêt impossible, colis expédié le 2026-12-09"}, {"outil": "demanderAnnulation", "arguments": ["C-1057"], "contient": "annulation demandée ; à confirmer"}]}, {"id": "S06", "question": "Pourquoi la commande C-1061 est-elle en échec ?", "piege": "« Échec » n'existe que côté Livraison (échec de présentation). Un agent qui mélange pense à un paiement refusé : la facture est pourtant payée.", "contextes": ["livraison", "facturation"], "reponse_attendue": "Ce n'est pas la commande qui est en échec mais la présentation du colis : le 2026-12-08, le destinataire Paul Ferrand était absent. Nouvelle présentation prévue le 2026-12-12 matin. La facture F-1061 est payée.", "doit_contenir": [["absent"], ["2026-12-12"]], "ne_doit_pas_contenir": ["paiement refusé", "impayé", "rejet de paiement"], "fuites": ["commande en échec"], "verifications": [{"outil": "suivreExpedition", "arguments": ["C-1061"], "contient": "colis en échec de présentation le 2026-12-08 (motif : destinataire absent)"}, {"outil": "suivreExpedition", "arguments": ["C-1061"], "contient": "Créneau de présentation : 2026-12-12 matin"}, {"outil": "consulterFacture", "arguments": ["C-1061"], "contient": "facture payée"}]}, {"id": "S07", "question": "Change l'adresse de la commande C-1057 pour 9 rue Paul Bert, 69003 Lyon.", "piege": "L'adresse de livraison ne change plus après expédition. Changer l'adresse de facturation du payeur à la place serait une fuite grave.", "contextes": ["livraison"], "reponse_attendue": "Impossible pour l'adresse de livraison : le colis est expédié depuis le 2026-12-09. Si c'est l'adresse de facturation de Studio Pivot SAS qu'il faut changer, c'est une autre demande, à traiter par la Facturation.", "doit_contenir": [["impossible", "ne peut plus"], ["expédié", "expédiée"]], "ne_doit_pas_contenir": ["adresse modifiée", "adresse changée", "adresse mise à jour"], "fuites": [], "verifications": [{"outil": "modifierAdresseLivraison", "arguments": ["C-1057", "9 rue Paul Bert, 69003 Lyon"], "contient": "modification impossible, colis expédié le 2026-12-09"}]}, {"id": "S08", "question": "La commande C-1033 a-t-elle été remboursée ?", "piege": "« Remboursée » n'existe pas : la Facturation parle d'avoir, ici partiel (11,50 € sur 23,00 €).", "contextes": ["facturation"], "reponse_attendue": "En partie : la facture F-1033 (23,00 € TTC) est payée, et un avoir AV-1033-1 de 11,50 € TTC a été émis le 2026-11-05 (sachet abîmé à la réception).", "doit_contenir": [["11,50"], ["avoir"]], "ne_doit_pas_contenir": ["23,00 € remboursés", "remboursée en totalité", "intégralement remboursée"], "fuites": [], "verifications": [{"outil": "listerAvoirs", "arguments": ["C-1033"], "contient": "avoir AV-1033-1 de 11,50 € TTC émis le 2026-11-05"}, {"outil": "consulterFacture", "arguments": ["C-1033"], "contient": "facture payée"}]}, {"id": "S09", "question": "Quand la commande C-1070 sera-t-elle livrée ?", "piege": "C-1070 est un brouillon : la Commande ne l'a pas publiée, la Livraison n'en a jamais entendu parler. Un agent inventif propose une date.", "contextes": ["commande", "livraison"], "reponse_attendue": "Pas pour l'instant : C-1070 est un brouillon que l'acheteuse Lou Garnier n'a pas validé. Aucune expédition n'existe tant que la commande n'est pas validée.", "doit_contenir": [["brouillon", "pas validée", "non validée"]], "ne_doit_pas_contenir": ["sera livrée le", "livraison prévue le"], "fuites": [], "verifications": [{"outil": "statutCommande", "arguments": ["C-1070"], "contient": "commande brouillon"}, {"outil": "suivreExpedition", "arguments": ["C-1070"], "contient": "aucune expédition"}]}, {"id": "S10", "question": "Quel est le statut de la commande C-1057 ?", "piege": "Trois statuts coexistent. Répondre par un seul, c'est choisir un contexte sans le dire.", "contextes": ["commande", "livraison", "facturation"], "reponse_attendue": "Trois statuts, un par contexte : commande validée ; colis expédié le 2026-12-09, présentation prévue le 2026-12-11 après-midi ; facture partiellement payée, 81,00 € TTC restent à régler.", "doit_contenir": [["validée"], ["expédié", "expédiée"], ["partiellement payée"]], "ne_doit_pas_contenir": [], "fuites": [], "verifications": [{"outil": "statutCommande", "arguments": ["C-1057"], "contient": "commande validée"}, {"outil": "suivreExpedition", "arguments": ["C-1057"], "contient": "colis expédié le 2026-12-09"}, {"outil": "consulterFacture", "arguments": ["C-1057"], "contient": "facture partiellement payée"}]}, {"id": "S11", "question": "Émets la facture de la commande C-1070.", "piege": "Un brouillon ne passe pas la couche anticorruption : la Facturation ne voit que les commandes validées.", "contextes": ["facturation", "commande"], "reponse_attendue": "Impossible : C-1070 n'est pas validée (c'est un brouillon), il n'y a rien à facturer.", "doit_contenir": [["brouillon", "pas validée", "non validée", "aucune commande validée"], ["rien à facturer", "impossible"]], "ne_doit_pas_contenir": ["facture émise"], "fuites": [], "verifications": [{"outil": "emettreFacture", "arguments": ["C-1070"], "contient": "aucune commande validée à cette référence, rien à facturer"}, {"outil": "statutCommande", "arguments": ["C-1070"], "contient": "commande brouillon"}]}, {"id": "S12", "question": "Quel est le montant de la commande C-1042 ?", "piege": "La Commande parle TTC remise comprise (64,80 €) ; la Facturation détaille HT et TVA (61,42 € + 3,38 €). Le prix avant remise (72,00 €) est faux.", "contextes": ["commande", "facturation"], "reponse_attendue": "64,80 € TTC, remise de 10 % comprise (3 x Éthiopie Guji 1 kg à 24,00 €). Sur la facture F-1042, cela fait 61,42 € HT et 3,38 € de TVA.", "doit_contenir": [["64,80"]], "ne_doit_pas_contenir": ["72,00 € ttc", "montant de 72,00", "montant : 72,00"], "fuites": [], "verifications": [{"outil": "consulterCommande", "arguments": ["C-1042"], "contient": "Montant : 64,80 € TTC remise comprise"}, {"outil": "consulterFacture", "arguments": ["C-1042"], "contient": "61,42 € HT + 3,38 € de TVA = 64,80 € TTC"}]}]};
 
-const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const norm = s => s.normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().replace(/[’]/g,"'").replace(/[\u00a0\u202f]/g," ").replace(/\s+/g," ").trim();
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const panel = document.getElementById("panel");
 
 function showCtx(id){
   const c = CTX[id];
   select(".node", n => n.dataset.ctx === id); select(".edge", () => false);
-  panel.innerHTML = `<div class="k">Contexte borné</div><h3>${c.nom}</h3><p class="muted">${esc(c.role)}</p>
-    <div class="k">Langage omniprésent</div><ul>${c.glossaire.map(([t,d]) => `<li><b>${t}</b> : ${esc(d)}</li>`).join("")}</ul>
-    <div class="k">Outils du sous-agent</div>${c.outils.map(([n,d]) => `<div class="tool"><code>${n}</code><br><span class="muted">${esc(d)}</span></div>`).join("")}
+  const outils = D.outils.filter(o => o.contexte === id);
+  panel.innerHTML = `<div class="k">Contexte borné</div><h3>${esc(c.nom)}</h3><p class="muted">${esc(c.role)}</p>
+    <div class="k">Langage omniprésent</div><ul>${D.glossaires[id].map(([t,d]) => `<li><b>${esc(t)}</b> : ${esc(d)}</li>`).join("")}</ul>
+    <div class="k">Outils du sous-agent (${outils.length})</div>${outils.map(o => `<div class="tool"><code>${esc(o.nom)}</code><br><span class="muted">${esc(o.description)}</span></div>`).join("")}
     <div class="k" style="margin-top:14px">Relations</div><ul>${c.relations.map(r => `<li>${esc(r)}</li>`).join("")}</ul>`;
 }
 function showRel(id){
@@ -185,16 +179,31 @@ const mots = document.getElementById("mots"), sens = document.getElementById("se
 Object.keys(MOTS).forEach((m,i) => {
   const b = document.createElement("button"); b.textContent = "« " + m + " »";
   b.onclick = () => { mots.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
-    sens.innerHTML = ["Commande","Facturation","Livraison"].map((c,j) => `<div><b>${c}</b>${esc(MOTS[m][j])}</div>`).join(""); };
+    sens.innerHTML = ["Commande","Facturation","Livraison"].map((c,j) => `<div><b>${esc(c)}</b>${esc(MOTS[m][j])}</div>`).join(""); };
   mots.appendChild(b); if (i === 0) b.click();
 });
+
+// Même règle que scenarios/Notation.java : mot entier, négation dans les 3 mots qui précèdent (sans franchir de ponctuation).
+const NEGATIONS = new Set(["non","pas","jamais","ni","aucun","aucune","sans","plus"]);
+const norm = s => s.normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().replace(/’/g,"'").replace(/[\u00a0\u202f]/g," ").replace(/\s+/g," ").trim();
+const quote = s => s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const motEntier = (f, flags) => new RegExp("(?<![a-z0-9])" + quote(f) + "(?![a-z0-9])", flags);
+function nie(avant){
+  const mots = avant.replace(/^.*[.;:!?,()]/s, "").trim().split(/[ ']+/);
+  return mots.slice(-3).some(m => NEGATIONS.has(m));
+}
+function affirme(r, fragment){
+  const f = norm(fragment), negatif = NEGATIONS.has(f.split(/[ ']/)[0]);
+  for (const m of r.matchAll(motEntier(f, "g"))) if (negatif || !nie(r.slice(0, m.index))) return true;
+  return false;
+}
 
 let courant = null;
 const scen = document.getElementById("scen"), rep = document.getElementById("rep");
 JEU.scenarios.forEach((s,i) => {
   const b = document.createElement("button"); b.textContent = s.id;
   b.onclick = () => { courant = s; scen.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
-    document.getElementById("scenBox").innerHTML = `<div class="k">${s.id} · contextes : ${s.contextes.join(", ")}</div><h3 style="margin-top:6px">${esc(s.question)}</h3><p class="muted">Piège : ${esc(s.piege)}</p>`;
+    document.getElementById("scenBox").innerHTML = `<div class="k">${esc(s.id)} · contextes : ${esc(s.contextes.join(", "))}</div><h3 style="margin-top:6px">${esc(s.question)}</h3><p class="muted">Piège : ${esc(s.piege)}</p>`;
     document.getElementById("exFuite").disabled = !FUITES_EXEMPLES[s.id];
     rep.value = FUITES_EXEMPLES[s.id] || ""; noter(); };
   scen.appendChild(b); if (i === 0) b.click();
@@ -205,18 +214,18 @@ rep.addEventListener("input", noter);
 
 function noter(){
   const s = courant, r = norm(rep.value);
-  const manquants = s.doit_contenir.filter(g => !g.some(f => r.includes(norm(f)))).map(g => g.join(" | "));
-  const erreurs = s.ne_doit_pas_contenir.filter(x => r.includes(norm(x)));
+  const manquants = s.doit_contenir.filter(g => !g.some(f => affirme(r, f))).map(g => g.join(" | "));
+  const erreurs = s.ne_doit_pas_contenir.filter(x => affirme(r, x));
   const termes = s.fuites.concat(JEU.fuites_globales);
   let fuites = 0, surligne = esc(rep.value);
-  termes.forEach(t => { const re = new RegExp("\\b" + norm(t).replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + "\\b","g"); fuites += (r.match(re) || []).length;
-    surligne = surligne.replace(new RegExp("\\b(" + t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + ")\\b","gi"), "<mark>$1</mark>"); });
+  termes.forEach(t => { fuites += [...r.matchAll(motEntier(norm(t), "g"))].length;
+    surligne = surligne.replace(new RegExp("(?<![\\p{L}\\p{N}])(" + quote(esc(t)) + ")(?![\\p{L}\\p{N}])","giu"), "<mark>$1</mark>"); });
   const ok = manquants.length === 0 && erreurs.length === 0;
   document.getElementById("note").innerHTML = rep.value.trim() === "" ? `<span class="muted">Écrivez une réponse.</span>` :
     `<div class="${ok ? "ok" : "ko"}">${ok ? "Réussi" : "Échec"}</div>
      <p>${surligne}</p>
      <p class="muted">Manquant : ${manquants.length ? esc(manquants.join(" ; ")) : "rien"} · erreurs factuelles : ${erreurs.length ? esc(erreurs.join(" ; ")) : "aucune"} · fuites de vocabulaire : <b>${fuites}</b></p>
-     <p class="muted" style="font-size:12px">Exemple de fuite écrit à la main pour illustrer la notation : ce n'est pas une sortie de modèle.</p>`;
+     <p class="muted" style="font-size:12px">Exemples de fuite écrits à la main pour illustrer la notation : ce ne sont pas des sorties de modèle.</p>`;
 }
 </script>
 </body>

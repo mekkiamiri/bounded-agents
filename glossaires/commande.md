@@ -9,8 +9,8 @@
 | Remise | Pourcentage appliqué à tout le panier. | avoir |
 | Montant | Total **TTC remise comprise**, arrondi au centime par ligne. | montant HT, reste à régler |
 | Brouillon | Panier non validé. N'existe pas pour les autres contextes. | — |
-| Validée | L'acheteur a confirmé. La commande est alors publiée (`CommandeValidee`). | payée, livrée |
-| Annulation demandée | L'acheteur veut annuler une commande validée. À confirmer par les autres contextes. | annulée, avoir |
+| Validée | L'acheteur a confirmé. L'événement `CommandeValidee` est publié aux autres contextes. | payée, livrée |
+| Annulation demandée | L'acheteur veut annuler une commande validée. La commande reste publiée jusqu'à la décision : confirmée (annulée) ou refusée (de nouveau validée, par exemple si le colis est parti). | annulée, avoir |
 | Consignes de livraison | Destinataire, adresse et créneau saisis à la commande ; la Livraison en devient propriétaire. | adresse de facturation |
 
 Outils : `consulterCommande`, `statutCommande`, `demanderAnnulation` (`commande.outils.OutilsCommande`).

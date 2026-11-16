@@ -5,7 +5,8 @@ public enum StatutFacture {
     EMISE("émise"),
     PARTIELLEMENT_PAYEE("partiellement payée"),
     PAYEE("payée"),
-    EN_RETARD("en retard");
+    EN_RETARD("en retard"),
+    ANNULEE_PAR_AVOIR("annulée par avoir");
 
     private final String libelle;
 

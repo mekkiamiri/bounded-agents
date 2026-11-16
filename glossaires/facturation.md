@@ -7,9 +7,10 @@
 | Facture | Une par commande validée, numéro `F-<n°>`, référence de la commande. | commande |
 | Montant HT / TVA / TTC | HT arrondi au centime par ligne ; TVA = TTC − HT ; taux réduit 5,5 % (café), normal 20 % (matériel). | montant de la Commande (TTC remisé) |
 | Échéance | Date d'émission + 30 jours. | créneau |
-| Reste à régler | TTC − paiements reçus. | montant |
-| Statut | émise, partiellement payée, payée, en retard (échéance dépassée et reste à régler non nul). | statut de commande, statut de livraison |
-| Avoir | Document qui annule tout ou partie d'une facture (`AV-<n°>-<rang>`). Ce que le langage courant appelle « remboursement ». | remise, annulation |
+| Reste à régler | TTC − avoirs − paiements reçus (jamais négatif). | montant |
+| Trop-perçu | Paiements reçus au-delà de TTC − avoirs : à rembourser au payeur. | remise |
+| Statut | émise, partiellement payée, payée, en retard (échéance dépassée et reste à régler non nul), annulée par avoir. | statut de commande, statut de livraison |
+| Avoir | Document qui annule tout ou partie d'une facture (`AV-<n°>-<rang>`). Strictement positif, plafonné à ce qui n'est pas déjà annulé. Ce que le langage courant appelle « remboursement ». | remise, annulation |
 
 Couche anticorruption : `facturation.acl.TraducteurCommande` (acheteur → payeur, TTC → HT + TVA).
 Outils : `consulterFacture`, `resteARegler`, `listerAvoirs`, `emettreFacture` (`facturation.outils.OutilsFacturation`).

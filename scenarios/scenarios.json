@@ -107,13 +107,14 @@
       "question": "La commande C-1033 a-t-elle été remboursée ?",
       "piege": "« Remboursée » n'existe pas : la Facturation parle d'avoir, ici partiel (11,50 € sur 23,00 €).",
       "contextes": ["facturation"],
-      "reponse_attendue": "En partie : la facture F-1033 (23,00 € TTC) est payée, et un avoir AV-1033-1 de 11,50 € TTC a été émis le 2026-11-05 (sachet abîmé à la réception).",
+      "reponse_attendue": "En partie : la facture F-1033 (23,00 € TTC) est payée, et un avoir AV-1033-1 de 11,50 € TTC a été émis le 2026-11-05 (sachet abîmé à la réception) ; ces 11,50 € sont un trop-perçu à rembourser au payeur, Lou Garnier.",
       "doit_contenir": [["11,50"], ["avoir"]],
       "ne_doit_pas_contenir": ["23,00 € remboursés", "remboursée en totalité", "intégralement remboursée"],
       "fuites": [],
       "verifications": [
         {"outil": "listerAvoirs", "arguments": ["C-1033"], "contient": "avoir AV-1033-1 de 11,50 € TTC émis le 2026-11-05"},
-        {"outil": "consulterFacture", "arguments": ["C-1033"], "contient": "facture payée"}
+        {"outil": "consulterFacture", "arguments": ["C-1033"], "contient": "facture payée"},
+        {"outil": "consulterFacture", "arguments": ["C-1033"], "contient": "Trop-perçu à rembourser au payeur : 11,50 €"}
       ]
     },
     {

@@ -32,7 +32,10 @@ class ExpeditionTest {
         e.echecDePresentation(LocalDate.of(2026, 12, 8), "destinataire absent", "vendredi matin");
         assertEquals(StatutLivraison.ECHEC_PRESENTATION, e.statut());
         assertEquals("vendredi matin", e.creneau());
-        e.livrer(LocalDate.of(2026, 12, 12));
+        e.echecDePresentation(LocalDate.of(2026, 12, 11), "adresse introuvable", "lundi matin");
+        assertEquals(2, e.echecs());
+        assertEquals("adresse introuvable", e.motifEchec());
+        e.livrer(LocalDate.of(2026, 12, 14));
         assertEquals(StatutLivraison.LIVREE, e.statut());
     }
 }

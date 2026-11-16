@@ -16,6 +16,8 @@ class FuiteDetecteeTest {
         JavaClasses fuite = new ClassFileImporter().importClasses(OutilFuyant.class);
         AssertionError erreur = assertThrows(AssertionError.class, () -> Frontieres.outilsDuContexte("livraison").check(fuite));
         assertTrue(erreur.getMessage().contains("facturation.domaine.Factures"), erreur.getMessage());
-        assertThrows(AssertionError.class, () -> Frontieres.LIVRAISON_LIT_SEULEMENT_LE_CONTRAT.check(fuite));
+        // Recopié tel quel dans les slides : on l'affiche dans la sortie de mvn.
+        System.out.println(erreur.getMessage());
+        assertThrows(AssertionError.class, () -> Frontieres.LIVRAISON_CONFORMISTE.check(fuite));
     }
 }

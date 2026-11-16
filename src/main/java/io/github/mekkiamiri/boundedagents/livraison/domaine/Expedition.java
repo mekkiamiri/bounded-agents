@@ -12,6 +12,7 @@ public final class Expedition {
     private StatutLivraison statut = StatutLivraison.A_PREPARER;
     private LocalDate dateDernierEvenement;
     private String motifEchec;
+    private int echecs;
 
     public Expedition(String referenceCommande, Destinataire destinataire, String adresseLivraison, String creneau) {
         this.referenceCommande = referenceCommande;
@@ -48,8 +49,14 @@ public final class Expedition {
         motifEchec = null;
     }
 
+    /**
+     * Le colis n'a pas pu être remis ; un nouveau créneau est fixé. Règle métier : on peut échouer
+     * plusieurs fois (deuxième, troisième présentation) ; le retour à l'expéditeur n'est pas modélisé en v0.
+     */
     public void echecDePresentation(LocalDate date, String motif, String nouveauCreneau) {
-        exiger(statut == StatutLivraison.EXPEDIEE, "seul un colis parti peut échouer à la présentation");
+        exiger(statut == StatutLivraison.EXPEDIEE || statut == StatutLivraison.ECHEC_PRESENTATION,
+                "seul un colis parti peut échouer à la présentation");
+        echecs++;
         statut = StatutLivraison.ECHEC_PRESENTATION;
         dateDernierEvenement = date;
         motifEchec = motif;
@@ -69,6 +76,7 @@ public final class Expedition {
     public StatutLivraison statut() { return statut; }
     public LocalDate dateDernierEvenement() { return dateDernierEvenement; }
     public String motifEchec() { return motifEchec; }
+    public int echecs() { return echecs; }
 
     /** Violation d'une règle d'acheminement. */
     public static final class RegleDeLivraison extends RuntimeException {

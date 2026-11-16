@@ -35,8 +35,9 @@ public final class OutilsFacturation {
     public String resteARegler(String referenceCommande) {
         return factures.pourCommande(referenceCommande)
                 .map(f -> f.numero() + " : reste à régler " + Texte.euros(f.resteARegler()) + " TTC sur "
-                        + Texte.euros(f.montantTTC()) + " TTC (déjà réglé " + Texte.euros(f.dejaRegle())
-                        + "), échéance " + f.echeance())
+                        + Texte.euros(f.montantTTC()) + " TTC (avoirs " + Texte.euros(f.totalAvoirs())
+                        + ", déjà réglé " + Texte.euros(f.dejaRegle()) + "), échéance " + f.echeance()
+                        + "." + aRembourser(f))
                 .orElse(aucune(referenceCommande));
     }
 
@@ -66,7 +67,12 @@ public final class OutilsFacturation {
                 + ", adresse de facturation : " + f.payeur().adresseFacturation()
                 + ". Montant : " + Texte.euros(f.montantHT()) + " HT + " + Texte.euros(f.montantTVA()) + " de TVA = "
                 + Texte.euros(f.montantTTC()) + " TTC. Émise le " + f.dateEmission() + ", échéance " + f.echeance()
-                + ". Reste à régler : " + Texte.euros(f.resteARegler()) + ".";
+                + ". Avoirs : " + Texte.euros(f.totalAvoirs())
+                + ". Reste à régler : " + Texte.euros(f.resteARegler()) + "." + aRembourser(f);
+    }
+
+    private static String aRembourser(Facture f) {
+        return f.aRembourser().signum() > 0 ? " Trop-perçu à rembourser au payeur : " + Texte.euros(f.aRembourser()) + "." : "";
     }
 
     private static String avoir(Avoir a) {

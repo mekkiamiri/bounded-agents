@@ -5,10 +5,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Langage publié par la Commande : ce que les autres contextes ont le droit de savoir d'une commande validée.
+ * Événement du domaine publié par la Commande, dans son langage publié : « l'acheteur a validé sa commande ».
  *
- * <p>Ce contrat est le seul point d'entrée vers la Commande. La Livraison le lit directement
- * (partenariat) ; la Facturation le traduit dans sa couche anticorruption.
+ * <p>C'est le seul point d'entrée vers la Commande (service hôte ouvert). La Livraison le consomme
+ * tel quel (conformiste) ; la Facturation le traduit dans sa couche anticorruption.
+ * À l'étape suivante, c'est ce même événement qui voyagera dans un message A2A.
  *
  * @param compteAcheteur compte de l'acheteur (la Facturation en déduit le payeur)
  * @param lignes lignes avec leur total TTC remise comprise
@@ -20,6 +21,7 @@ public record CommandeValidee(
         List<Ligne> lignes,
         BigDecimal totalTTC,
         LocalDate datePassage,
+        LocalDate dateValidation,
         String nomDestinataireSaisi,
         String adresseLivraisonSaisie,
         String creneauSouhaite) {

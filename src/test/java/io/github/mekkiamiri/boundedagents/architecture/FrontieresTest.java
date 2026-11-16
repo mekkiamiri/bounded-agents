@@ -25,8 +25,8 @@ class FrontieresTest {
     }
 
     @Test
-    void la_livraison_ne_lit_que_le_contrat_de_la_commande() {
-        Frontieres.LIVRAISON_LIT_SEULEMENT_LE_CONTRAT.check(code);
+    void la_livraison_est_conformiste_au_langage_publie_de_la_commande() {
+        Frontieres.LIVRAISON_CONFORMISTE.check(code);
     }
 
     @Test
@@ -49,6 +49,12 @@ class FrontieresTest {
     @Test
     void les_outils_sont_dans_leur_paquet() {
         Frontieres.OUTILS_DANS_LEUR_PAQUET.check(code);
+    }
+
+    @Test
+    void spring_ai_reste_dans_l_adaptateur_et_les_agents_passent_par_les_outils() {
+        Frontieres.FRAMEWORK_DANS_L_ADAPTATEUR.check(code);
+        Frontieres.AGENTS_PASSENT_PAR_LES_OUTILS.check(code);
     }
 
     @Test

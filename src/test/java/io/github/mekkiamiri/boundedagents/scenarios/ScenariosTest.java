@@ -40,9 +40,10 @@ class ScenariosTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("scenarios")
     void les_verifications_passent_sur_le_jeu_de_donnees(Scenario s) {
-        CatalogueOutils catalogue = JeuDeDonnees.brulerie().catalogue();
         Set<String> contextesUtilises = new HashSet<>();
         for (Scenario.Verification v : s.verifications()) {
+            // Jeu de données neuf à chaque appel : certains outils modifient l'état (annulation, adresse).
+            CatalogueOutils catalogue = JeuDeDonnees.brulerie().catalogue();
             Outil outil = catalogue.outil(v.outil()).orElseThrow(() -> new AssertionError(s.id() + " : outil inconnu " + v.outil()));
             contextesUtilises.add(outil.contexte());
             String sortie = outil.appeler(v.arguments());

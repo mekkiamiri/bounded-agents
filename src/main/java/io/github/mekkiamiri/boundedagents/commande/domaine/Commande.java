@@ -15,6 +15,7 @@ public final class Commande {
     private final LocalDate datePassage;
     private final ConsignesDeLivraison consignes;
     private StatutCommande statut;
+    private LocalDate dateValidation;
 
     public Commande(String numero, Acheteur acheteur, List<LigneCommande> lignes, int remisePourcent,
                     LocalDate datePassage, ConsignesDeLivraison consignes) {
@@ -33,11 +34,12 @@ public final class Commande {
         this.statut = StatutCommande.BROUILLON;
     }
 
-    public void valider() {
+    public void valider(LocalDate date) {
         if (statut != StatutCommande.BROUILLON) {
             throw new IllegalStateException(numero + " : seule une commande en brouillon se valide");
         }
         statut = StatutCommande.VALIDEE;
+        dateValidation = date;
     }
 
     /**
@@ -51,6 +53,29 @@ public final class Commande {
             case ANNULATION_DEMANDEE, ANNULEE -> statut;
         };
         return statut;
+    }
+
+    /** Les autres contextes ont confirmé (colis arrêté) : la commande est annulée. */
+    public void confirmerAnnulation() {
+        exigerAnnulationDemandee();
+        statut = StatutCommande.ANNULEE;
+    }
+
+    /** Annulation refusée (colis déjà parti : ce sera un retour) : la commande redevient validée. */
+    public void refuserAnnulation() {
+        exigerAnnulationDemandee();
+        statut = StatutCommande.VALIDEE;
+    }
+
+    private void exigerAnnulationDemandee() {
+        if (statut != StatutCommande.ANNULATION_DEMANDEE) {
+            throw new IllegalStateException(numero + " : aucune annulation demandée (statut : " + statut.libelle() + ")");
+        }
+    }
+
+    /** Une commande validée, même avec une annulation en attente, reste un engagement envers les autres contextes. */
+    public boolean engagee() {
+        return statut == StatutCommande.VALIDEE || statut == StatutCommande.ANNULATION_DEMANDEE;
     }
 
     /** Prix d'une ligne pour l'acheteur, remise comprise, arrondi au centime. */
@@ -71,4 +96,5 @@ public final class Commande {
     public LocalDate datePassage() { return datePassage; }
     public ConsignesDeLivraison consignes() { return consignes; }
     public StatutCommande statut() { return statut; }
+    public LocalDate dateValidation() { return dateValidation; }
 }

@@ -46,4 +46,32 @@ class NotationTest {
         Notation.Resultat r = notation.noter(scenario("S04"), "Il RESTE 81,00 EUR a regler.");
         assertTrue(r.reussi());
     }
+
+    @Test
+    void un_nombre_se_compare_en_entier() {
+        assertFalse(notation.noter(scenario("S12"), "Le montant est de 164,80 € TTC.").reussi());
+        assertTrue(notation.noter(scenario("S12"), "64,80 €").reussi());
+    }
+
+    @Test
+    void un_fragment_nie_ne_compte_pas() {
+        assertFalse(Notation.affirme(Notation.normaliser("La commande est non validée."), "validée"));
+        assertFalse(Notation.affirme(Notation.normaliser("Elle n'est pas encore validée."), "validée"));
+        assertTrue(Notation.affirme(Notation.normaliser("Pas de souci : elle est validée."), "validée"));
+        assertTrue(Notation.affirme(Notation.normaliser("Elle n'est pas validée."), "pas validée"));
+    }
+
+    @Test
+    void une_erreur_niee_n_est_pas_une_erreur() {
+        Notation.Resultat r = notation.noter(scenario("S06"),
+                "Ce n'est pas un impayé : le destinataire était absent, nouvelle présentation le 2026-12-12.");
+        assertTrue(r.reussi(), r.toString());
+        assertTrue(r.erreurs().isEmpty());
+    }
+
+    @Test
+    void la_negation_ne_traverse_pas_la_ponctuation() {
+        assertTrue(Notation.affirme(Notation.normaliser("Pas entièrement. Le colis a été livré."), "livré"));
+        assertFalse(Notation.affirme(Notation.normaliser("La commande est validée."), "valide"));
+    }
 }

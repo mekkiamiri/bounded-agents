@@ -21,7 +21,7 @@ class TraducteurCommandeTest {
 
     private static CommandeValidee commande(String compte, CommandeValidee.Ligne... lignes) {
         BigDecimal total = List.of(lignes).stream().map(CommandeValidee.Ligne::totalTTCRemise).reduce(BigDecimal.ZERO, BigDecimal::add);
-        return new CommandeValidee("C-9", compte, "Acheteuse", List.of(lignes), total, LocalDate.of(2026, 12, 1), "D", "adresse", "");
+        return new CommandeValidee("C-9", compte, "Acheteuse", List.of(lignes), total, LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 1), "D", "adresse", "");
     }
 
     @Test

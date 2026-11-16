@@ -26,20 +26,34 @@ public final class Facture {
         this.dateEmission = dateEmission;
     }
 
+    /** Encaisse un paiement du payeur : strictement positif, jamais au-delà du reste à régler. */
     public void encaisser(Paiement paiement) {
+        exigerPositif(paiement.montant(), "paiement");
         if (paiement.montant().compareTo(resteARegler()) > 0) {
             throw new IllegalArgumentException(numero + " : paiement supérieur au reste à régler");
         }
         paiements.add(paiement);
     }
 
+    /**
+     * Émet un avoir : strictement positif, plafonné à ce qui n'a pas déjà été annulé par d'autres avoirs.
+     * L'avoir réduit d'abord le reste à régler ; ce qui dépasse devient un trop-perçu à rembourser au payeur.
+     */
     public Avoir emettreAvoir(BigDecimal montantTTC, LocalDate date, String motif) {
-        if (montantTTC.compareTo(montantTTC()) > 0) {
-            throw new IllegalArgumentException(numero + " : avoir supérieur à la facture");
+        exigerPositif(montantTTC, "avoir");
+        if (montantTTC.compareTo(montantNetTTC()) > 0) {
+            throw new IllegalArgumentException(numero + " : avoir supérieur au montant non encore annulé ("
+                    + montantNetTTC().toPlainString() + ")");
         }
         Avoir avoir = new Avoir("AV-" + referenceCommande.replace("C-", "") + "-" + (avoirs.size() + 1), montantTTC, date, motif);
         avoirs.add(avoir);
         return avoir;
+    }
+
+    private void exigerPositif(BigDecimal montant, String quoi) {
+        if (montant.signum() <= 0) {
+            throw new IllegalArgumentException(numero + " : un " + quoi + " est strictement positif");
+        }
     }
 
     public LocalDate echeance() {
@@ -62,11 +76,29 @@ public final class Facture {
         return paiements.stream().map(Paiement::montant).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    public BigDecimal totalAvoirs() {
+        return avoirs.stream().map(Avoir::montantTTC).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** Ce que le payeur doit au total : TTC moins les avoirs émis. */
+    public BigDecimal montantNetTTC() {
+        return montantTTC().subtract(totalAvoirs());
+    }
+
+    /** Ce qui reste dû par le payeur (jamais négatif). */
     public BigDecimal resteARegler() {
-        return montantTTC().subtract(dejaRegle());
+        return montantNetTTC().subtract(dejaRegle()).max(BigDecimal.ZERO);
+    }
+
+    /** Trop-perçu à rendre au payeur quand un avoir arrive après le paiement. */
+    public BigDecimal aRembourser() {
+        return dejaRegle().subtract(montantNetTTC()).max(BigDecimal.ZERO);
     }
 
     public StatutFacture statut(LocalDate aujourdhui) {
+        if (montantNetTTC().signum() == 0) {
+            return StatutFacture.ANNULEE_PAR_AVOIR;
+        }
         if (resteARegler().signum() == 0) {
             return StatutFacture.PAYEE;
         }
