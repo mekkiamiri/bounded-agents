@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un sous-agent par bounded context · Mekki Amiri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Généré par kit/build_deck.py : modifier les slides source, pas ce fichier. -->
+<style>
+/* Base 16:9 obligatoire (frontend-slides/viewport-base.css) */
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Include this ENTIRE file in every presentation.
+   Slides are authored at 1920×1080 and scaled as a whole.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920×1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* === IDENTITÉ « BANC D'ESSAI » (commune aux talks de Mekki Amiri) ===
+   Graphite + ambre d'instrument de mesure. Polices : Instrument Serif (titres), Martian Mono (chiffres, chrome). */
+:root{--stage-bg:#0d0f10;--slide-bg:#121416;--amber:#ffb000;--amber-soft:rgba(255,176,0,.18);--paper:#e9e4d8;--muted:#a9a39a;--dim:#5b5f63;--red:#ff5a4f;--green:#7fd18b}
+.slide{color:var(--paper);font-family:'Martian Mono',monospace;background:radial-gradient(ellipse at 72% 38%,#1c2023 0%,#121416 68%)}
+.slide::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 2px,transparent 2px 4px)}
+
+/* === CHROME DE SLIDE : titre du talk + compteur, en bas === */
+.chrome{position:absolute;left:120px;right:120px;bottom:56px;display:flex;justify-content:space-between;font-size:20px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;z-index:2}
+
+/* === TYPOGRAPHIE === */
+.k{font-size:24px;color:var(--amber);letter-spacing:.22em;text-transform:uppercase}
+h1,h2,h3{font-family:'Instrument Serif',serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:150px;line-height:.98}
+h2{font-size:104px;line-height:1.02}
+h3{font-size:60px;line-height:1.08}
+em{color:var(--amber);font-style:italic}
+p,li{font-size:34px;line-height:1.45;color:var(--paper)}
+.muted{color:var(--muted)}
+.pad{position:absolute;left:120px;right:120px;top:120px;bottom:140px}
+
+/* === RÈGLE GRADUÉE + AIGUILLE (signature) === */
+.ruler{position:absolute;left:120px;right:120px;top:120px;height:60px;border-bottom:2px solid var(--dim)}
+.ruler i{position:absolute;bottom:0;width:2px;background:var(--dim)}
+.needle{position:absolute;top:100px;left:120px;width:4px;height:100px;background:var(--amber);box-shadow:0 0 18px var(--amber)}
+.slide.active .needle{animation:sweep 1.6s cubic-bezier(.3,1.4,.5,1) .15s forwards}
+@keyframes sweep{to{left:var(--to,1300px)}}
+
+/* === AFFICHEURS (gros chiffres) === */
+.readouts{display:flex;gap:28px}
+.readouts div{border:2px solid var(--dim);padding:24px 32px;min-width:260px}
+.readouts b{display:block;font:500 76px 'Martian Mono';color:var(--amber);text-shadow:0 0 14px rgba(255,176,0,.45)}
+.readouts span{font-size:22px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.big{font:500 260px/1 'Martian Mono';color:var(--amber);text-shadow:0 0 30px rgba(255,176,0,.4)}
+.todo{border:2px dashed var(--amber);color:var(--amber);padding:6px 16px;font-size:24px;letter-spacing:.1em;display:inline-block}
+
+/* === LISTES (3 éléments maximum) === */
+ul.steps{list-style:none;padding:0;margin:40px 0 0}
+ul.steps li{padding:22px 0 22px 90px;position:relative;border-top:1px solid #2a2e31}
+ul.steps li::before{content:attr(data-n);position:absolute;left:0;top:22px;font:500 34px 'Martian Mono';color:var(--amber)}
+
+/* === TABLEAU DE MESURES === */
+table.m{border-collapse:collapse;width:100%;font-size:28px}
+table.m th{font-weight:400;color:var(--muted);text-align:left;padding:16px 18px;border-bottom:2px solid var(--dim);letter-spacing:.08em;text-transform:uppercase;font-size:20px}
+table.m td{padding:20px 18px;border-bottom:1px solid #2a2e31}
+table.m td.n{font-family:'Martian Mono';color:var(--amber);text-align:right}
+
+/* === CODE === */
+pre.code{background:#0b0c0d;border:2px solid #2a2e31;padding:36px 40px;font:400 26px/1.55 'Martian Mono';color:var(--paper);white-space:pre;overflow:hidden;margin:0}
+pre.code .c{color:var(--dim)} pre.code .h{color:var(--amber)}
+
+/* === DEUX COLONNES === */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:80px}
+.panel{border:2px solid #2a2e31;padding:40px}
+.panel h3{margin-bottom:20px}
+
+/* === APPARITIONS === */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.slide.active .reveal{opacity:1;transform:none}
+.slide.active .reveal:nth-child(2){transition-delay:.12s}.slide.active .reveal:nth-child(3){transition-delay:.24s}.slide.active .reveal:nth-child(4){transition-delay:.36s}.slide.active .reveal:nth-child(5){transition-delay:.48s}
+
+/* === NOTES DU SPEAKER (cachées ; touche N pour les afficher) === */
+.notes{display:none}
+body.show-notes .slide.active .notes{display:block;position:absolute;left:120px;right:120px;bottom:100px;background:#000c;border-left:4px solid var(--amber);padding:20px 28px;font-size:22px;line-height:1.5;color:var(--paper);z-index:5}
+
+/* === BARRE DE PROGRESSION (hors slide) === */
+.progress{position:fixed;left:0;bottom:0;height:4px;background:var(--amber);z-index:1001;transition:width .3s}
+
+</style>
+</head>
+<body>
+<div class="deck-viewport"><main class="deck-stage" id="deckStage">
+<!-- Slides du talk « Un sous-agent par bounded context : le DDD pour vos agents »
+     Construire : python3 <kit>/build_deck.py slides/slides.html docs/slides/index.html "Un sous-agent par bounded context"
+     Règle : aucun chiffre de résultat avant mesure ; les emplacements sont marqués « à mesurer ». -->
+
+<!-- 1. Titre (0:00) -->
+<section class="slide">
+  <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
+  <div class="pad" style="top:250px">
+    <div class="k reveal">Devoxx France 2027</div>
+    <h1 class="reveal" style="margin-top:40px">Un sous-agent par<br><em>bounded context</em></h1>
+  </div>
+  <div class="readouts reveal" style="position:absolute;left:120px;bottom:130px"><div><b>3</b><span>contextes</span></div><div><b>10</b><span>outils</span></div><div><b>12</b><span>scénarios</span></div></div>
+  <div style="position:absolute;right:120px;bottom:140px;text-align:right" class="reveal"><h3>Mekki Amiri</h3><p class="muted" style="font-size:24px;margin:8px 0 0">Tech Lead · architecte système</p></div>
+  <aside class="notes">Bonjour. 18 ans de DDD sur du code. Aujourd'hui : les mêmes outils, appliqués aux agents.</aside>
+</section>
+
+<!-- 2. Le problème (0:45) -->
+<section class="slide">
+  <div class="pad" style="top:260px">
+    <div class="k reveal">Le problème</div>
+    <h2 class="reveal" style="margin-top:30px">Un agent qui sait tout faire<br><em>finit par tout mélanger.</em></h2>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Chaque outil ajouté rend les autres un peu moins fiables. On découpe alors en sous-agents… souvent au hasard.</aside>
+</section>
+
+<!-- 3. La question piège (1:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">En direct · scénario S03</div>
+    <h2 class="reveal" style="margin:30px 0 60px">« Qui est le <em>client</em><br>de la commande C-1042 ? »</h2>
+    <p class="reveal">L'agent unique a 10 outils et trois langages.</p>
+    <p class="muted reveal">Il répond. Avec aplomb. Mais de quel client parle-t-il ?</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Démo : poser la question à l'agent unique (étape suivante du dépôt ; plan B : réponse enregistrée). Ne pas annoncer de taux : rien n'est encore mesuré.</aside>
+</section>
+
+<!-- 4. Trois sens (3:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Un mot, trois personnes</div>
+    <table class="m reveal" style="margin-top:50px">
+      <tr><th>Contexte</th><th>« client » veut dire</th><th>Pour C-1042</th></tr>
+      <tr><td>Commande</td><td><em>acheteur</em></td><td>Inès Morel</td></tr>
+      <tr><td>Facturation</td><td><em>payeur</em></td><td>Studio Pivot SAS</td></tr>
+      <tr><td>Livraison</td><td><em>destinataire</em></td><td>Karim Benali, à l'accueil</td></tr>
+    </table>
+    <p class="muted reveal" style="margin-top:40px">Personnes et entreprises fictives. « Statut », « adresse », « montant » : même piège.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Ce n'est pas un problème de prompt, c'est un problème de modèle. Le DDD l'a déjà rencontré dans le code.</aside>
+</section>
+
+<!-- 5. Section DDD (6:00) -->
+<section class="slide">
+  <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 1</div><h1 class="reveal" style="margin-top:30px">Le DDD a <em>déjà</em> résolu ça</h1></div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 6. Bounded context = sous-agent (7:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Correspondance</div>
+    <div class="cols reveal" style="margin-top:50px">
+      <div class="panel"><h3>DDD</h3><p>Bounded context<br>Langage omniprésent<br>Context map<br>Événement du domaine</p></div>
+      <div class="panel"><h3><em>Agents</em></h3><p>Sous-agent<br>Descriptions d'outils<br>Qui parle à qui<br>Message A2A</p></div>
+    </div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Un sous-agent par contexte borné : son langage, ses outils, son contexte à lui.</aside>
+</section>
+
+<!-- 7. Langage omniprésent dans les outils (8:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Le langage omniprésent, là où le modèle le lit</div>
+    <pre class="code reveal" style="margin-top:40px"><span class="c">// livraison.outils.OutilsLivraison</span>
+<span class="h">@OutilAgent</span>(nom = "suivreExpedition",
+  description = "Donne l'état d'acheminement du colis : <span class="h">destinataire</span>,
+                 <span class="h">adresse de livraison</span>, créneau, statut, motif d'échec.")
+public String suivreExpedition(String referenceCommande)</pre>
+    <p class="reveal" style="margin-top:40px">Le mot « client » est <em>interdit</em> : un test échoue sinon.</p>
+    <p class="muted reveal">Le modèle ne lit que les mots qu'on lui donne.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 8. Context map (11:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Context map</div>
+    <table class="m reveal" style="margin-top:50px">
+      <tr><th>Relation</th><th>Type</th><th>Ce qui traverse</th></tr>
+      <tr><td>Commande → Livraison</td><td><em>partenariat</em></td><td>contrat CommandeValidee</td></tr>
+      <tr><td>Commande → Facturation</td><td><em>client-fournisseur</em> + ACL</td><td>contrat traduit</td></tr>
+      <tr><td>Livraison / Facturation</td><td>aucune</td><td>rien</td></tr>
+    </table>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Ouvrir la page : le context map est cliquable. Le vocabulaire, les outils et les relations de chaque contexte.</aside>
+</section>
+
+<!-- 9. Partenariat ou ACL (13:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Quand traduire ?</div>
+    <div class="cols reveal" style="margin-top:50px">
+      <div class="panel"><h3>Partenariat</h3><p>Livraison lit le contrat tel quel.</p><p class="muted">Même saisie, mêmes évolutions.</p></div>
+      <div class="panel"><h3>Couche <em>anticorruption</em></h3><p>Facturation traduit tout.</p><p class="muted">TVA, mentions légales : elle ne plie pas.</p></div>
+    </div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 10. Les frontières s'exécutent (14:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Des frontières qui s'exécutent · ArchUnit</div>
+    <pre class="code reveal" style="margin-top:40px">noClasses().that().resideInAPackage("..facturation..")
+  .and().resideOutsideOfPackage("..facturation.<span class="h">acl</span>..")
+  .should().dependOnClassesThat()
+  .resideInAnyPackage("..commande..", "..livraison..");</pre>
+    <p class="muted reveal" style="margin-top:40px">Un outil ne touche que le modèle de son contexte.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 11. Section démo (16:00) -->
+<section class="slide">
+  <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 2</div><h1 class="reveal" style="margin-top:30px">La <em>démo</em></h1></div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 12. Le domaine (16:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Une brûlerie de café · fictive</div>
+    <div class="readouts reveal" style="margin-top:60px"><div><b>3</b><span>contextes</span></div><div><b>10</b><span>outils</span></div><div><b>12</b><span>scénarios</span></div></div>
+    <p class="reveal" style="margin-top:60px">Particuliers et entreprises : celui qui commande<br>n'est pas celui qui paie, ni celui qui reçoit.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Java 21, sans framework en v0. mvn verify : domaine, ACL, ArchUnit, scénarios.</aside>
+</section>
+
+<!-- 13. Agent unique (18:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Architecture 1</div>
+    <h2 class="reveal" style="margin:30px 0 40px">L'agent <em>unique</em></h2>
+    <p class="reveal">Un seul agent, 10 outils, trois langages dans le même contexte.</p>
+    <div class="todo reveal" style="margin-top:30px">étape suivante · branchement Spring AI</div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Démo : S01 « La commande C-1042 est-elle terminée ? ». Piège : validée, livrée, mais facture en retard.</aside>
+</section>
+
+<!-- 14. Découpage (20:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Architecture 2</div>
+    <h2 class="reveal" style="margin:30px 0 40px">Un routeur, <em>trois sous-agents</em></h2>
+    <ul class="steps reveal">
+      <li data-n="C">Commande <span class="muted">· 3 outils · acheteur, montant TTC</span></li>
+      <li data-n="F">Facturation <span class="muted">· 4 outils · payeur, HT, TVA, avoir</span></li>
+      <li data-n="L">Livraison <span class="muted">· 3 outils · destinataire, colis</span></li>
+    </ul>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 15. A2A (22:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Qui parle à qui · A2A</div>
+    <h2 class="reveal" style="margin:30px 0 40px">Le context map devient<br><em>une règle de routage</em></h2>
+    <p class="reveal">La Livraison ne parle jamais à la Facturation.</p>
+    <div class="todo reveal" style="margin-top:30px">étape suivante · Spring AI A2A 0.4.0</div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Chaque sous-agent publié comme serveur A2A, avec sa carte d'agent. Les messages jouent le rôle des événements du domaine.</aside>
+</section>
+
+<!-- 16. Scénario multi-contextes (24:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Scénario S05</div>
+    <h3 class="reveal" style="margin:30px 0 40px">« Peut-on annuler la commande C-1057 ? »</h3>
+    <pre class="code reveal">demanderAnnulation("C-1057")  <span class="c">// Commande</span>
+<span class="c">→ annulation demandée ; à confirmer</span>
+arreterExpedition("C-1057")   <span class="c">// Livraison</span>
+<span class="h">→ arrêt impossible, colis expédié le 2026-12-09</span></pre>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Sorties réelles des outils sur le jeu de données. Un agent qui n'appelle que la Commande annonce une annulation qui n'aura pas lieu.</aside>
+</section>
+
+<!-- 17. La couche anticorruption (26:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Couche anticorruption · facturation.acl</div>
+    <pre class="code reveal" style="margin-top:40px">Payeur payeur = payeurs.pourCompte(commande.compteAcheteur())
+    .orElseThrow(() -> new PayeurInconnu(...));   <span class="c">// acheteur → payeur</span>
+LigneFacture.depuisTTC(l.produit(), l.quantite(),
+    l.totalTTCRemise(), <span class="h">taux(l.categorie())</span>); <span class="c">// TTC → HT + TVA</span></pre>
+    <p class="muted reveal" style="margin-top:40px">Elle refuse ce qu'elle ne sait pas traduire. Elle n'invente pas.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 18. Même montant, deux langages (27:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Scénario S12 · le même montant</div>
+    <div class="cols reveal" style="margin-top:50px">
+      <div class="panel"><h3>Commande</h3><p><em>64,80 €</em> TTC</p><p class="muted">remise de 10 % comprise</p></div>
+      <div class="panel"><h3>Facturation</h3><p><em>61,42 €</em> HT + 3,38 € TVA</p><p class="muted">taux réduit 5,5 %</p></div>
+    </div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 19. La fuite attrapée (29:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Une fuite, attrapée par le build</div>
+    <pre class="code reveal" style="margin-top:40px"><span class="c">// OutilFuyant : un outil de Livraison qui « rend service »</span>
+factures.pourCommande(ref).map(f -> f.resteARegler())
+
+<span class="h">Architecture Violation</span> - Rule '… '..livraison.outils..'
+should only depend on … ['..livraison..', '..agent..', 'java..'] …'
+was violated (4 times)</pre>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Extrait du vrai message ArchUnit. L'exemple vit dans les sources de test : un test vérifie que la règle échoue dessus.</aside>
+</section>
+
+<!-- 20. AG-UI (31:00) -->
+<section class="slide">
+  <div class="pad" style="top:240px">
+    <div class="k reveal">Côte à côte · AG-UI</div>
+    <h2 class="reveal" style="margin-top:30px">La même question,<br><em>deux architectures</em></h2>
+    <div class="todo reveal" style="margin-top:50px">étape suivante · interface AG-UI · plan B : vidéo</div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Démo finale : S02 adresse. L'agent unique donne une adresse ; les sous-agents en donnent deux, nommées.</aside>
+</section>
+
+<!-- 21. Section mesures (34:00) -->
+<section class="slide">
+  <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 3</div><h1 class="reveal" style="margin-top:30px">Les <em>mesures</em></h1></div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 22. Protocole (35:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Ce qu'on mesure · 12 scénarios × 5 passages</div>
+    <ul class="steps reveal">
+      <li data-n="01">Réussite <span class="muted">· fragments attendus, erreurs interdites</span></li>
+      <li data-n="02">Tokens <span class="muted">· même modèle, même température</span></li>
+      <li data-n="03">Fuites de vocabulaire <span class="muted">· « client », mot d'un autre contexte</span></li>
+    </ul>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 23. Résultats (37:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Agent unique contre agents découpés</div>
+    <table class="m reveal" style="margin-top:40px">
+      <tr><th>Mesure</th><th>Agent unique</th><th>Agents découpés</th></tr>
+      <tr><td>Outils à départager</td><td class="n">10</td><td class="n">≤ 4</td></tr>
+      <tr><td>Réussite</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td>Tokens par scénario</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td>Fuites de vocabulaire</td><td class="n">—</td><td class="n">—</td></tr>
+    </table>
+    <div class="todo reveal" style="margin-top:36px">à mesurer · seule la première ligne est connue</div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 24. Ce qui ne marche pas (39:00) -->
+<section class="slide">
+  <div class="pad" style="top:240px">
+    <div class="k reveal">Ce qui coûte</div>
+    <h2 class="reveal" style="margin-top:30px">Le routeur se trompe aussi.<br><em>Et chaque saut coûte des tokens.</em></h2>
+    <div class="todo reveal" style="margin-top:50px">à mesurer · erreurs de routage, coût des échanges A2A</div>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Hypothèses, pas résultats. Montrer les échecs tels quels quand ils seront mesurés.</aside>
+</section>
+
+<!-- 25. Section méthode (41:00) -->
+<section class="slide">
+  <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 4</div><h1 class="reveal" style="margin-top:30px">La <em>méthode</em></h1></div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 26. La méthode en 3 étapes (41:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Demain, sur vos agents</div>
+    <ul class="steps reveal">
+      <li data-n="01">Dessinez le context map <span class="muted">· avant le premier sous-agent</span></li>
+      <li data-n="02">Un glossaire par contexte <span class="muted">· il devient les descriptions d'outils</span></li>
+      <li data-n="03">Testez les frontières <span class="muted">· ArchUnit + scénarios pièges</span></li>
+    </ul>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 27. Refaire chez soi (43:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Chez vous</div>
+    <pre class="code reveal" style="margin-top:40px">git clone https://github.com/mekkiamiri/bounded-agents
+cd bounded-agents
+mvn -B verify</pre>
+    <p class="reveal" style="margin-top:40px">Remplacez la brûlerie par votre domaine,<br>et les 12 scénarios par vos pièges.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+<!-- 28. Fin (44:00) -->
+<section class="slide">
+  <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
+  <div class="pad" style="top:300px">
+    <h2 class="reveal">Découpez vos agents<br>comme votre <em>domaine</em>.</h2>
+    <p class="reveal" style="margin-top:50px">mekkiamiri.github.io/bounded-agents</p>
+    <p class="muted reveal">Questions ?</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+</section>
+
+</main></div>
+<div class="progress"></div>
+<script>
+
+/* === CONTRÔLEUR : échelle 16:9, clavier, tactile, #numéro dans l'URL, notes (N) === */
+class Deck{
+  constructor(){this.s=[...document.querySelectorAll('.slide')];this.st=document.getElementById('deckStage');this.p=document.querySelector('.progress');
+    this.s.forEach((sl,i)=>{const c=sl.querySelector('.chrome .n');if(c)c.textContent=String(i+1).padStart(2,'0')+' / '+String(this.s.length).padStart(2,'0');});
+    const f=()=>{const k=Math.min(innerWidth/1920,innerHeight/1080);this.st.style.transform=`translate(${(innerWidth-1920*k)/2}px,${(innerHeight-1080*k)/2}px) scale(${k})`;};f();addEventListener('resize',f);
+    addEventListener('keydown',e=>{if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();this.go(this.i+1)}else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();this.go(this.i-1)}else if(e.key==='Home')this.go(0);else if(e.key==='End')this.go(this.s.length-1);else if(e.key==='n'||e.key==='N')document.body.classList.toggle('show-notes');});
+    let x0=null;addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});addEventListener('touchend',e=>{if(x0===null)return;const d=e.changedTouches[0].clientX-x0;if(Math.abs(d)>50)this.go(this.i+(d<0?1:-1));x0=null;});
+    addEventListener('hashchange',()=>this.fromHash());this.i=0;this.fromHash();}
+  fromHash(){const n=parseInt(location.hash.slice(1),10);this.go(isNaN(n)?0:n-1,true);}
+  go(n,silent){this.i=Math.max(0,Math.min(n,this.s.length-1));this.s.forEach((sl,j)=>sl.classList.toggle('active',j===this.i));if(this.p)this.p.style.width=((this.i+1)/this.s.length*100)+'%';if(!silent)history.replaceState(null,'','#'+(this.i+1));}
+}
+new Deck();
+
+</script>
+</body>
+</html>

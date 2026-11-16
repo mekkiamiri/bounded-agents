@@ -1,0 +1,339 @@
+<!-- Slides du talk « Un sous-agent par bounded context : le DDD pour vos agents »
+     Construire : python3 <kit>/build_deck.py slides/slides.html docs/slides/index.html "Un sous-agent par bounded context"
+     Règle : aucun chiffre de résultat avant mesure ; les emplacements sont marqués « à mesurer ». -->
+
+<!-- 1. Titre (0:00) -->
+<section class="slide">
+  {{RULER}}
+  <div class="pad" style="top:250px">
+    <div class="k reveal">Devoxx France 2027</div>
+    <h1 class="reveal" style="margin-top:40px">Un sous-agent par<br><em>bounded context</em></h1>
+  </div>
+  <div class="readouts reveal" style="position:absolute;left:120px;bottom:130px"><div><b>3</b><span>contextes</span></div><div><b>10</b><span>outils</span></div><div><b>12</b><span>scénarios</span></div></div>
+  <div style="position:absolute;right:120px;bottom:140px;text-align:right" class="reveal"><h3>Mekki Amiri</h3><p class="muted" style="font-size:24px;margin:8px 0 0">Tech Lead · architecte système</p></div>
+  <aside class="notes">Bonjour. 18 ans de DDD sur du code. Aujourd'hui : les mêmes outils, appliqués aux agents.</aside>
+</section>
+
+<!-- 2. Le problème (0:45) -->
+<section class="slide">
+  <div class="pad" style="top:260px">
+    <div class="k reveal">Le problème</div>
+    <h2 class="reveal" style="margin-top:30px">Un agent qui sait tout faire<br><em>finit par tout mélanger.</em></h2>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Chaque outil ajouté rend les autres un peu moins fiables. On découpe alors en sous-agents… souvent au hasard.</aside>
+</section>
+
+<!-- 3. La question piège (1:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">En direct · scénario S03</div>
+    <h2 class="reveal" style="margin:30px 0 60px">« Qui est le <em>client</em><br>de la commande C-1042 ? »</h2>
+    <p class="reveal">L'agent unique a 10 outils et trois langages.</p>
+    <p class="muted reveal">Il répond. Avec aplomb. Mais de quel client parle-t-il ?</p>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Démo : poser la question à l'agent unique (étape suivante du dépôt ; plan B : réponse enregistrée). Ne pas annoncer de taux : rien n'est encore mesuré.</aside>
+</section>
+
+<!-- 4. Trois sens (3:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Un mot, trois personnes</div>
+    <table class="m reveal" style="margin-top:50px">
+      <tr><th>Contexte</th><th>« client » veut dire</th><th>Pour C-1042</th></tr>
+      <tr><td>Commande</td><td><em>acheteur</em></td><td>Inès Morel</td></tr>
+      <tr><td>Facturation</td><td><em>payeur</em></td><td>Studio Pivot SAS</td></tr>
+      <tr><td>Livraison</td><td><em>destinataire</em></td><td>Karim Benali, à l'accueil</td></tr>
+    </table>
+    <p class="muted reveal" style="margin-top:40px">Personnes et entreprises fictives. « Statut », « adresse », « montant » : même piège.</p>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Ce n'est pas un problème de prompt, c'est un problème de modèle. Le DDD l'a déjà rencontré dans le code.</aside>
+</section>
+
+<!-- 5. Section DDD (6:00) -->
+<section class="slide">
+  {{RULER}}
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 1</div><h1 class="reveal" style="margin-top:30px">Le DDD a <em>déjà</em> résolu ça</h1></div>
+  {{CHROME}}
+</section>
+
+<!-- 6. Bounded context = sous-agent (7:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Correspondance</div>
+    <div class="cols reveal" style="margin-top:50px">
+      <div class="panel"><h3>DDD</h3><p>Bounded context<br>Langage omniprésent<br>Context map<br>Événement du domaine</p></div>
+      <div class="panel"><h3><em>Agents</em></h3><p>Sous-agent<br>Descriptions d'outils<br>Qui parle à qui<br>Message A2A</p></div>
+    </div>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Un sous-agent par contexte borné : son langage, ses outils, son contexte à lui.</aside>
+</section>
+
+<!-- 7. Langage omniprésent dans les outils (8:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Le langage omniprésent, là où le modèle le lit</div>
+    <pre class="code reveal" style="margin-top:40px"><span class="c">// livraison.outils.OutilsLivraison</span>
+<span class="h">@OutilAgent</span>(nom = "suivreExpedition",
+  description = "Donne l'état d'acheminement du colis : <span class="h">destinataire</span>,
+                 <span class="h">adresse de livraison</span>, créneau, statut, motif d'échec.")
+public String suivreExpedition(String referenceCommande)</pre>
+    <p class="reveal" style="margin-top:40px">Le mot « client » est <em>interdit</em> : un test échoue sinon.</p>
+    <p class="muted reveal">Le modèle ne lit que les mots qu'on lui donne.</p>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 8. Context map (11:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Context map</div>
+    <table class="m reveal" style="margin-top:50px">
+      <tr><th>Relation</th><th>Type</th><th>Ce qui traverse</th></tr>
+      <tr><td>Commande → Livraison</td><td><em>partenariat</em></td><td>contrat CommandeValidee</td></tr>
+      <tr><td>Commande → Facturation</td><td><em>client-fournisseur</em> + ACL</td><td>contrat traduit</td></tr>
+      <tr><td>Livraison / Facturation</td><td>aucune</td><td>rien</td></tr>
+    </table>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Ouvrir la page : le context map est cliquable. Le vocabulaire, les outils et les relations de chaque contexte.</aside>
+</section>
+
+<!-- 9. Partenariat ou ACL (13:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Quand traduire ?</div>
+    <div class="cols reveal" style="margin-top:50px">
+      <div class="panel"><h3>Partenariat</h3><p>Livraison lit le contrat tel quel.</p><p class="muted">Même saisie, mêmes évolutions.</p></div>
+      <div class="panel"><h3>Couche <em>anticorruption</em></h3><p>Facturation traduit tout.</p><p class="muted">TVA, mentions légales : elle ne plie pas.</p></div>
+    </div>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 10. Les frontières s'exécutent (14:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Des frontières qui s'exécutent · ArchUnit</div>
+    <pre class="code reveal" style="margin-top:40px">noClasses().that().resideInAPackage("..facturation..")
+  .and().resideOutsideOfPackage("..facturation.<span class="h">acl</span>..")
+  .should().dependOnClassesThat()
+  .resideInAnyPackage("..commande..", "..livraison..");</pre>
+    <p class="muted reveal" style="margin-top:40px">Un outil ne touche que le modèle de son contexte.</p>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 11. Section démo (16:00) -->
+<section class="slide">
+  {{RULER}}
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 2</div><h1 class="reveal" style="margin-top:30px">La <em>démo</em></h1></div>
+  {{CHROME}}
+</section>
+
+<!-- 12. Le domaine (16:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Une brûlerie de café · fictive</div>
+    <div class="readouts reveal" style="margin-top:60px"><div><b>3</b><span>contextes</span></div><div><b>10</b><span>outils</span></div><div><b>12</b><span>scénarios</span></div></div>
+    <p class="reveal" style="margin-top:60px">Particuliers et entreprises : celui qui commande<br>n'est pas celui qui paie, ni celui qui reçoit.</p>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Java 21, sans framework en v0. mvn verify : domaine, ACL, ArchUnit, scénarios.</aside>
+</section>
+
+<!-- 13. Agent unique (18:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Architecture 1</div>
+    <h2 class="reveal" style="margin:30px 0 40px">L'agent <em>unique</em></h2>
+    <p class="reveal">Un seul agent, 10 outils, trois langages dans le même contexte.</p>
+    <div class="todo reveal" style="margin-top:30px">étape suivante · branchement Spring AI</div>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Démo : S01 « La commande C-1042 est-elle terminée ? ». Piège : validée, livrée, mais facture en retard.</aside>
+</section>
+
+<!-- 14. Découpage (20:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Architecture 2</div>
+    <h2 class="reveal" style="margin:30px 0 40px">Un routeur, <em>trois sous-agents</em></h2>
+    <ul class="steps reveal">
+      <li data-n="C">Commande <span class="muted">· 3 outils · acheteur, montant TTC</span></li>
+      <li data-n="F">Facturation <span class="muted">· 4 outils · payeur, HT, TVA, avoir</span></li>
+      <li data-n="L">Livraison <span class="muted">· 3 outils · destinataire, colis</span></li>
+    </ul>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 15. A2A (22:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Qui parle à qui · A2A</div>
+    <h2 class="reveal" style="margin:30px 0 40px">Le context map devient<br><em>une règle de routage</em></h2>
+    <p class="reveal">La Livraison ne parle jamais à la Facturation.</p>
+    <div class="todo reveal" style="margin-top:30px">étape suivante · Spring AI A2A 0.4.0</div>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Chaque sous-agent publié comme serveur A2A, avec sa carte d'agent. Les messages jouent le rôle des événements du domaine.</aside>
+</section>
+
+<!-- 16. Scénario multi-contextes (24:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Scénario S05</div>
+    <h3 class="reveal" style="margin:30px 0 40px">« Peut-on annuler la commande C-1057 ? »</h3>
+    <pre class="code reveal">demanderAnnulation("C-1057")  <span class="c">// Commande</span>
+<span class="c">→ annulation demandée ; à confirmer</span>
+arreterExpedition("C-1057")   <span class="c">// Livraison</span>
+<span class="h">→ arrêt impossible, colis expédié le 2026-12-09</span></pre>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Sorties réelles des outils sur le jeu de données. Un agent qui n'appelle que la Commande annonce une annulation qui n'aura pas lieu.</aside>
+</section>
+
+<!-- 17. La couche anticorruption (26:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Couche anticorruption · facturation.acl</div>
+    <pre class="code reveal" style="margin-top:40px">Payeur payeur = payeurs.pourCompte(commande.compteAcheteur())
+    .orElseThrow(() -> new PayeurInconnu(...));   <span class="c">// acheteur → payeur</span>
+LigneFacture.depuisTTC(l.produit(), l.quantite(),
+    l.totalTTCRemise(), <span class="h">taux(l.categorie())</span>); <span class="c">// TTC → HT + TVA</span></pre>
+    <p class="muted reveal" style="margin-top:40px">Elle refuse ce qu'elle ne sait pas traduire. Elle n'invente pas.</p>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 18. Même montant, deux langages (27:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Scénario S12 · le même montant</div>
+    <div class="cols reveal" style="margin-top:50px">
+      <div class="panel"><h3>Commande</h3><p><em>64,80 €</em> TTC</p><p class="muted">remise de 10 % comprise</p></div>
+      <div class="panel"><h3>Facturation</h3><p><em>61,42 €</em> HT + 3,38 € TVA</p><p class="muted">taux réduit 5,5 %</p></div>
+    </div>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 19. La fuite attrapée (29:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Une fuite, attrapée par le build</div>
+    <pre class="code reveal" style="margin-top:40px"><span class="c">// OutilFuyant : un outil de Livraison qui « rend service »</span>
+factures.pourCommande(ref).map(f -> f.resteARegler())
+
+<span class="h">Architecture Violation</span> - Rule '… '..livraison.outils..'
+should only depend on … ['..livraison..', '..agent..', 'java..'] …'
+was violated (4 times)</pre>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Extrait du vrai message ArchUnit. L'exemple vit dans les sources de test : un test vérifie que la règle échoue dessus.</aside>
+</section>
+
+<!-- 20. AG-UI (31:00) -->
+<section class="slide">
+  <div class="pad" style="top:240px">
+    <div class="k reveal">Côte à côte · AG-UI</div>
+    <h2 class="reveal" style="margin-top:30px">La même question,<br><em>deux architectures</em></h2>
+    <div class="todo reveal" style="margin-top:50px">étape suivante · interface AG-UI · plan B : vidéo</div>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Démo finale : S02 adresse. L'agent unique donne une adresse ; les sous-agents en donnent deux, nommées.</aside>
+</section>
+
+<!-- 21. Section mesures (34:00) -->
+<section class="slide">
+  {{RULER}}
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 3</div><h1 class="reveal" style="margin-top:30px">Les <em>mesures</em></h1></div>
+  {{CHROME}}
+</section>
+
+<!-- 22. Protocole (35:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Ce qu'on mesure · 12 scénarios × 5 passages</div>
+    <ul class="steps reveal">
+      <li data-n="01">Réussite <span class="muted">· fragments attendus, erreurs interdites</span></li>
+      <li data-n="02">Tokens <span class="muted">· même modèle, même température</span></li>
+      <li data-n="03">Fuites de vocabulaire <span class="muted">· « client », mot d'un autre contexte</span></li>
+    </ul>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 23. Résultats (37:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Agent unique contre agents découpés</div>
+    <table class="m reveal" style="margin-top:40px">
+      <tr><th>Mesure</th><th>Agent unique</th><th>Agents découpés</th></tr>
+      <tr><td>Outils à départager</td><td class="n">10</td><td class="n">≤ 4</td></tr>
+      <tr><td>Réussite</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td>Tokens par scénario</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td>Fuites de vocabulaire</td><td class="n">—</td><td class="n">—</td></tr>
+    </table>
+    <div class="todo reveal" style="margin-top:36px">à mesurer · seule la première ligne est connue</div>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 24. Ce qui ne marche pas (39:00) -->
+<section class="slide">
+  <div class="pad" style="top:240px">
+    <div class="k reveal">Ce qui coûte</div>
+    <h2 class="reveal" style="margin-top:30px">Le routeur se trompe aussi.<br><em>Et chaque saut coûte des tokens.</em></h2>
+    <div class="todo reveal" style="margin-top:50px">à mesurer · erreurs de routage, coût des échanges A2A</div>
+  </div>
+  {{CHROME}}
+  <aside class="notes">Hypothèses, pas résultats. Montrer les échecs tels quels quand ils seront mesurés.</aside>
+</section>
+
+<!-- 25. Section méthode (41:00) -->
+<section class="slide">
+  {{RULER}}
+  <div class="pad" style="top:320px"><div class="k reveal">Partie 4</div><h1 class="reveal" style="margin-top:30px">La <em>méthode</em></h1></div>
+  {{CHROME}}
+</section>
+
+<!-- 26. La méthode en 3 étapes (41:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Demain, sur vos agents</div>
+    <ul class="steps reveal">
+      <li data-n="01">Dessinez le context map <span class="muted">· avant le premier sous-agent</span></li>
+      <li data-n="02">Un glossaire par contexte <span class="muted">· il devient les descriptions d'outils</span></li>
+      <li data-n="03">Testez les frontières <span class="muted">· ArchUnit + scénarios pièges</span></li>
+    </ul>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 27. Refaire chez soi (43:00) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Chez vous</div>
+    <pre class="code reveal" style="margin-top:40px">git clone https://github.com/mekkiamiri/bounded-agents
+cd bounded-agents
+mvn -B verify</pre>
+    <p class="reveal" style="margin-top:40px">Remplacez la brûlerie par votre domaine,<br>et les 12 scénarios par vos pièges.</p>
+  </div>
+  {{CHROME}}
+</section>
+
+<!-- 28. Fin (44:00) -->
+<section class="slide">
+  {{RULER}}
+  <div class="pad" style="top:300px">
+    <h2 class="reveal">Découpez vos agents<br>comme votre <em>domaine</em>.</h2>
+    <p class="reveal" style="margin-top:50px">mekkiamiri.github.io/bounded-agents</p>
+    <p class="muted reveal">Questions ?</p>
+  </div>
+  {{CHROME}}
+</section>
