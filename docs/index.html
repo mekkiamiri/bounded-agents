@@ -21,7 +21,6 @@ a{color:var(--amber)}
 .k{color:var(--amber);letter-spacing:.2em;text-transform:uppercase;font-size:12px}
 .muted{color:var(--muted)}
 .lead{font-size:17px;max-width:760px}
-.todo{display:inline-block;border:1px dashed var(--amber);color:var(--amber);padding:2px 10px;font-size:12px;letter-spacing:.08em}
 .grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start}
 @media (max-width:820px){.grid{grid-template-columns:1fr}}
 svg{width:100%;height:auto;display:block}
@@ -107,13 +106,14 @@ footer{margin-top:70px;border-top:1px solid var(--line);padding-top:18px;font-si
   <p class="lead">Le dépôt branche déjà les deux architectures sur un modèle avec Spring AI 2.0.2 : l'agent unique (10 outils) et l'agent découpé (un routeur qui consulte trois sous-agents, un par contexte). <code>mvn -q exec:java</code> rejoue S01 à S03 avec le modèle de votre choix. A2A et AG-UI : étape suivante.</p>
 
   <h2>Les mesures</h2>
-  <p class="muted">Même modèle, mêmes outils, mêmes données ; seul le découpage change. Rien n'est encore mesuré.</p>
+  <p class="muted">Même modèle, même température, mêmes outils, mêmes données ; seul le découpage change. 12 scénarios × 5 passages × 2 architectures. Mesures publiées en janvier 2027, échecs compris.</p>
   <table>
-    <tr><th>Mesure</th><th>Agent unique (10 outils)</th><th>Agents découpés (3 × ≤ 4 outils)</th></tr>
-    <tr><td>Réussite sur 12 scénarios × 5 passages</td><td><span class="todo">à mesurer</span></td><td><span class="todo">à mesurer</span></td></tr>
-    <tr><td>Tokens par scénario</td><td><span class="todo">à mesurer</span></td><td><span class="todo">à mesurer</span></td></tr>
-    <tr><td>Erreurs de vocabulaire</td><td><span class="todo">à mesurer</span></td><td><span class="todo">à mesurer</span></td></tr>
+    <tr><th>Mesure</th><th>Lue par</th><th>Ce qui compte</th></tr>
+    <tr><td>Réussite</td><td><code>Notation</code></td><td>tous les fragments attendus, aucune erreur interdite</td></tr>
+    <tr><td>Tokens par scénario</td><td><code>ModeleCompte</code></td><td>entrée + sortie, routeur et sous-agents compris</td></tr>
+    <tr><td>Erreurs de vocabulaire</td><td><code>Notation</code></td><td>« client » ou mot d'un autre contexte dans la réponse</td></tr>
   </table>
+  <p class="muted" style="margin-top:14px">Hypothèse, pas résultat : avec 4 outils au plus et un seul glossaire par sous-agent (contre 10 outils et trois glossaires pour l'agent unique), le découpage devrait réduire les erreurs de vocabulaire, au prix de tokens en plus. Essayez la notation ci-dessus : c'est elle qui notera les vraies réponses.</p>
   <p class="muted" style="margin-top:14px">Ce qui tourne déjà : le domaine, les outils par contexte, la couche anticorruption, les frontières ArchUnit et les 12 scénarios vérifiés par les tests. Agent unique et agent découpé branchés avec Spring AI (S01 à S03), sans résultat publié. A2A et AG-UI : étape suivante.</p>
 
   <footer>
