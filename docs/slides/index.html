@@ -216,7 +216,7 @@ body.show-notes .slide.active .notes{display:block;position:absolute;left:120px;
 <div class="deck-viewport"><main class="deck-stage" id="deckStage">
 <!-- Slides du talk « Un sous-agent par bounded context : le DDD pour vos agents »
      Construire : python3 <kit>/build_deck.py slides/slides.html docs/slides/index.html "Un sous-agent par bounded context"
-     Règle : aucun chiffre de résultat avant mesure ; les emplacements sont marqués « à mesurer ». -->
+     Règle : aucun chiffre de résultat avant mesure. Ce qui n'est pas mesuré est montré comme hypothèse ou protocole. -->
 
 <!-- 1. Titre (0:00) -->
 <section class="slide">
@@ -341,6 +341,7 @@ public String suivreExpedition(String referenceCommande)</pre>
     <p class="muted reveal" style="margin-top:40px">Hors de sa couche anticorruption, la Facturation<br>ne voit ni la Commande, ni la Livraison.</p>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Le context map n'est pas un dessin sur un wiki : c'est une règle qui casse le build. Dix tests ArchUnit dans FrontieresTest. Tout à l'heure, je vous montre une fuite attrapée.</aside>
 </section>
 
 <!-- 11. Section démo (16:00) -->
@@ -354,11 +355,11 @@ public String suivreExpedition(String referenceCommande)</pre>
 <section class="slide">
   <div class="pad">
     <div class="k reveal">Une brûlerie de café · fictive</div>
-    <div class="readouts reveal" style="margin-top:60px"><div><b>3</b><span>contextes</span></div><div><b>10</b><span>outils</span></div><div><b>12</b><span>scénarios</span></div></div>
+    <div class="readouts reveal" style="margin-top:60px"><div><b>3</b><span>contextes</span></div><div><b>10</b><span>outils</span></div><div><b>12</b><span>scénarios</span></div><div><b>67</b><span>tests verts</span></div></div>
     <p class="reveal" style="margin-top:60px">Particuliers et entreprises : celui qui commande<br>n'est pas celui qui paie, ni celui qui reçoit.</p>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
-  <aside class="notes">Java 21, sans framework en v0. mvn verify : domaine, ACL, ArchUnit, scénarios.</aside>
+  <aside class="notes">Java 21, Maven, Spring AI 2.0.2. mvn -B verify : 67 tests verts, sans appel de modèle. Domaine, couche anticorruption, ArchUnit, vocabulaire, câblage Spring AI avec un faux modèle, scénarios.</aside>
 </section>
 
 <!-- 13. Agent unique (18:00) -->
@@ -388,16 +389,19 @@ public String suivreExpedition(String referenceCommande)</pre>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
 </section>
 
-<!-- 15. A2A (22:00) -->
+<!-- 15. Qui parle à qui (22:00) -->
 <section class="slide">
   <div class="pad">
-    <div class="k reveal">Qui parle à qui · A2A</div>
+    <div class="k reveal">Qui parle à qui · ce qui tourne aujourd'hui</div>
     <h2 class="reveal" style="margin:30px 0 40px">Le context map devient<br><em>une règle de routage</em></h2>
-    <p class="reveal">La Livraison ne parle jamais à la Facturation.</p>
-    <div class="todo reveal" style="margin-top:30px">aujourd'hui : appel local · A2A (Spring AI A2A 0.4.0) : étape suivante</div>
+    <pre class="code reveal" style="font-size:24px"><span class="c">// ArchitecturesTest · les outils que voit le modèle, appel par appel</span>
+routeur   → demanderACommande, demanderAFacturation, demanderALivraison
+Livraison → arreterExpedition, modifierAdresseLivraison, suivreExpedition
+<span class="h">chaque sous-agent : 4 outils au plus</span></pre>
+    <p class="muted reveal" style="margin-top:30px">Appel local, testé sans modèle.<br>Livraison et Facturation : chemins séparés, gardés par ArchUnit.</p>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
-  <aside class="notes">Chaque sous-agent publié comme serveur A2A, avec sa carte d'agent. Les messages jouent le rôle des événements du domaine.</aside>
+  <aside class="notes">Le routeur voit chaque sous-agent comme un outil : demanderALivraison(question). C'est SousAgentSpringAi, un appel local. Le test le prouve : le routeur ne voit que trois sous-agents, chaque sous-agent ne voit que ses outils. Étape suivante : chaque sous-agent publié en serveur A2A (Spring AI A2A 0.4.0, carte d'agent), et CommandeValidee dans un message ; si ce n'est pas prêt le jour J, je le dis et je reste sur l'appel local.</aside>
 </section>
 
 <!-- 16. Scénario multi-contextes (24:00) -->
@@ -454,15 +458,19 @@ de livraison' was <span class="h">violated (4 times)</span>:</pre>
   <aside class="notes">Sortie réelle de mvn -B verify (FuiteDetecteeTest l'affiche). Les 4 violations : paramètre du constructeur, champ, deux appels de méthode. L'exemple vit dans les sources de test.</aside>
 </section>
 
-<!-- 20. AG-UI (31:00) -->
+<!-- 20. Côte à côte (31:00) -->
 <section class="slide">
-  <div class="pad" style="top:240px">
-    <div class="k reveal">Côte à côte · AG-UI</div>
-    <h2 class="reveal" style="margin-top:30px">La même question,<br><em>deux architectures</em></h2>
-    <div class="todo reveal" style="margin-top:50px">étape suivante · interface AG-UI · plan B : vidéo</div>
+  <div class="pad">
+    <div class="k reveal">Côte à côte · dans le terminal</div>
+    <h2 class="reveal" style="margin:30px 0 40px">La même question,<br><em>deux architectures</em></h2>
+    <pre class="code reveal" style="font-size:24px">BA_MODELE=&lt;modèle&gt; BA_CLE_API=&lt;clé&gt; mvn -q compile exec:java
+<span class="c">=== S02 · Quelle est l'adresse du client de la commande C-1042 ?</span>
+--- agent unique : réussi|échec · fuites · appels modèle · tokens
+--- agents découpés : <span class="h">même modèle, température 0, même notation</span></pre>
+    <p class="muted reveal" style="margin-top:30px">Une passe pour voir. Pas une mesure.</p>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
-  <aside class="notes">Démo finale : S02 adresse. L'agent unique donne une adresse ; les sous-agents en donnent deux, nommées.</aside>
+  <aside class="notes">Démo finale : S02, l'adresse. La bonne réponse en donne deux, nommées : livraison quai Rambaud, facturation rue des Lilas ; la notation exige les deux. Chaque ligne affiche la note, les fuites, les appels de modèle et les tokens. Plan B : la vidéo enregistrée de cette commande. Étape suivante : la même chose dans une interface AG-UI ; si elle n'est pas livrée, on reste dans le terminal.</aside>
 </section>
 
 <!-- 21. Section mesures (34:00) -->
@@ -472,54 +480,71 @@ de livraison' was <span class="h">violated (4 times)</span>:</pre>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
 </section>
 
-<!-- 22. Protocole (35:00) -->
+<!-- 22. Hypothèse (34:30) -->
 <section class="slide">
   <div class="pad">
-    <div class="k reveal">Ce qu'on mesure · 12 scénarios × 5 passages</div>
-    <ul class="steps reveal">
-      <li data-n="01">Réussite <span class="muted">· fragments attendus, erreurs interdites</span></li>
-      <li data-n="02">Tokens <span class="muted">· même modèle, même température</span></li>
-      <li data-n="03">Fuites de vocabulaire <span class="muted">· « client », mot d'un autre contexte</span></li>
-    </ul>
+    <div class="k reveal">Mon hypothèse · pas encore un résultat</div>
+    <h2 class="reveal" style="margin:30px 0 50px">Moins d'outils, un seul langage :<br><em>moins de fuites de vocabulaire.</em></h2>
+    <div class="readouts reveal"><div><b>10</b><span>outils · agent unique</span></div><div><b>≤ 4</b><span>outils · par sous-agent</span></div><div><b>1</b><span>glossaire · par sous-agent</span></div></div>
+    <p class="muted reveal" style="margin-top:50px">Ces chiffres viennent du code et des tests. Leur effet sur les réponses reste à prouver.</p>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Je m'attends à moins de fuites de vocabulaire avec le découpage : chaque sous-agent lit un seul glossaire et départage au plus 4 outils, au lieu de 10 outils et trois glossaires. C'est une hypothèse. Je vous montre comment je la teste, et je publierai le résultat même s'il me donne tort.</aside>
 </section>
 
-<!-- 23. Résultats (37:00) -->
+<!-- 23. La notation (36:00) -->
 <section class="slide">
   <div class="pad">
-    <div class="k reveal">Agent unique contre agents découpés</div>
+    <div class="k reveal">Le protocole · une notation sans modèle juge</div>
+    <pre class="code reveal" style="margin-top:40px;font-size:24px"><span class="c">// S01 « La commande C-1042 est-elle terminée ? »</span>
+noter(S01, "Oui, elle est terminée : le client l'a reçue le 6 novembre.")
+<span class="c">→</span> reussi=<span class="h">false</span>
+  manquants=[livré | livrée, en retard, 64,80]
+  erreurs=[oui, elle est terminée]   fuites=[<span class="h">client</span>]</pre>
+    <p class="reveal" style="margin-top:40px">Mot entier, négations, fuites comptées. <em>Déterministe.</em></p>
+    <p class="muted reveal">Réponse écrite à la main pour le test (NotationTest), pas par un modèle.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Sortie réelle de la classe Notation, sur une réponse écrite à la main. Pas de modèle juge : des fragments attendus, des erreurs interdites, des fuites comptées. Les mêmes règles noteront les 120 réponses du banc ; je relirai les échecs à la main.</aside>
+</section>
+
+<!-- 24. Ce qui coûte (38:00) -->
+<section class="slide">
+  <div class="pad" style="top:200px">
+    <div class="k reveal">Ce qui coûte · hypothèses</div>
+    <h2 class="reveal" style="margin:30px 0 50px">Le routeur se trompe aussi.<br><em>Et chaque saut coûte des tokens.</em></h2>
+    <p class="reveal">S05 : si le routeur n'interroge que la Commande,<br>il annonce une annulation qui n'aura pas lieu.</p>
+    <p class="muted reveal">Chaque sous-agent consulté ajoute ses appels de modèle.<br>ModeleCompte les additionne, routeur compris.</p>
+  </div>
+  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Le découpage n'est pas gratuit. Deux risques que le banc va chiffrer : l'erreur de routage, que la notation voit, et le surcoût en tokens, que ModeleCompte compte. Si le découpage coûte plus qu'il ne rapporte, je le dirai ici.</aside>
+</section>
+
+<!-- 25. Le banc (39:30) -->
+<section class="slide">
+  <div class="pad">
+    <div class="k reveal">Le banc · 12 scénarios × 5 passages × 2 architectures</div>
     <table class="m reveal" style="margin-top:40px">
-      <tr><th>Mesure</th><th>Agent unique</th><th>Agents découpés</th></tr>
-      <tr><td>Outils à départager</td><td class="n">10</td><td class="n">≤ 4</td></tr>
-      <tr><td>Réussite</td><td class="n">—</td><td class="n">—</td></tr>
-      <tr><td>Tokens par scénario</td><td class="n">—</td><td class="n">—</td></tr>
-      <tr><td>Fuites de vocabulaire</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><th>Mesure</th><th>Lue par</th><th>Ce qui compte</th></tr>
+      <tr><td>Réussite</td><td><em>Notation</em></td><td>tous les fragments, aucune erreur</td></tr>
+      <tr><td>Tokens</td><td><em>ModeleCompte</em></td><td>entrée + sortie, routeur compris</td></tr>
+      <tr><td>Fuites</td><td><em>Notation</em></td><td>« client », mot d'un autre contexte</td></tr>
+      <tr><td>Mauvais contexte</td><td><em>appels d'outils</em></td><td>outil hors des contextes du scénario</td></tr>
     </table>
-    <div class="todo reveal" style="margin-top:36px">à mesurer · seule la première ligne est connue</div>
+    <p class="muted reveal" style="margin-top:36px">Même modèle, même température : seul le découpage change.<br>Résultats publiés en janvier 2027, échecs compris.</p>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">120 réponses, versionnées dans results/ avec le modèle et la date. Les instruments sont codés et testés : Notation, ModeleCompte. Restent à écrire : la boucle 12 × 5, et le comptage du mauvais contexte dans les traces d'appels d'outils. C'est la grille que je remplirai avant la conférence.</aside>
 </section>
 
-<!-- 24. Ce qui ne marche pas (39:00) -->
-<section class="slide">
-  <div class="pad" style="top:240px">
-    <div class="k reveal">Ce qui coûte</div>
-    <h2 class="reveal" style="margin-top:30px">Le routeur se trompe aussi.<br><em>Et chaque saut coûte des tokens.</em></h2>
-    <div class="todo reveal" style="margin-top:50px">à mesurer · erreurs de routage, coût des échanges A2A</div>
-  </div>
-  <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
-  <aside class="notes">Hypothèses, pas résultats. Montrer les échecs tels quels quand ils seront mesurés.</aside>
-</section>
-
-<!-- 25. Section méthode (41:00) -->
+<!-- 26. Section méthode (41:00) -->
 <section class="slide">
   <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
   <div class="pad" style="top:320px"><div class="k reveal">Partie 4</div><h1 class="reveal" style="margin-top:30px">La <em>méthode</em></h1></div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
 </section>
 
-<!-- 26. La méthode en 3 étapes (41:30) -->
+<!-- 27. La méthode en 3 étapes (41:30) -->
 <section class="slide">
   <div class="pad">
     <div class="k reveal">Demain, sur vos agents</div>
@@ -530,9 +555,10 @@ de livraison' was <span class="h">violated (4 times)</span>:</pre>
     </ul>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Si vous ne retenez qu'une chose : le découpage de vos agents se décide sur le context map, pas sur l'organigramme des prompts. Le glossaire devient les descriptions d'outils. Et les frontières se testent, comme dans le code.</aside>
 </section>
 
-<!-- 27. Refaire chez soi (43:00) -->
+<!-- 28. Refaire chez soi (43:00) -->
 <section class="slide">
   <div class="pad">
     <div class="k reveal">Chez vous</div>
@@ -542,9 +568,10 @@ mvn -B verify</pre>
     <p class="reveal" style="margin-top:40px">Remplacez la brûlerie par votre domaine,<br>et les 12 scénarios par vos pièges.</p>
   </div>
   <div class="chrome"><span>Un sous-agent par bounded context</span><span class="n"></span></div>
+  <aside class="notes">Tout est public, Apache-2.0. mvn -B verify tourne sans clé d'API : 67 tests verts. Pour voir un vrai modèle, une variable d'environnement suffit.</aside>
 </section>
 
-<!-- 28. Fin (44:00) -->
+<!-- 29. Fin (44:00) -->
 <section class="slide">
   <div class="ruler"><i style="left:0px;height:40px"></i><i style="left:28px;height:12px"></i><i style="left:56px;height:12px"></i><i style="left:84px;height:12px"></i><i style="left:112px;height:12px"></i><i style="left:140px;height:24px"></i><i style="left:168px;height:12px"></i><i style="left:196px;height:12px"></i><i style="left:224px;height:12px"></i><i style="left:252px;height:12px"></i><i style="left:280px;height:40px"></i><i style="left:308px;height:12px"></i><i style="left:336px;height:12px"></i><i style="left:364px;height:12px"></i><i style="left:392px;height:12px"></i><i style="left:420px;height:24px"></i><i style="left:448px;height:12px"></i><i style="left:476px;height:12px"></i><i style="left:504px;height:12px"></i><i style="left:532px;height:12px"></i><i style="left:560px;height:40px"></i><i style="left:588px;height:12px"></i><i style="left:616px;height:12px"></i><i style="left:644px;height:12px"></i><i style="left:672px;height:12px"></i><i style="left:700px;height:24px"></i><i style="left:728px;height:12px"></i><i style="left:756px;height:12px"></i><i style="left:784px;height:12px"></i><i style="left:812px;height:12px"></i><i style="left:840px;height:40px"></i><i style="left:868px;height:12px"></i><i style="left:896px;height:12px"></i><i style="left:924px;height:12px"></i><i style="left:952px;height:12px"></i><i style="left:980px;height:24px"></i><i style="left:1008px;height:12px"></i><i style="left:1036px;height:12px"></i><i style="left:1064px;height:12px"></i><i style="left:1092px;height:12px"></i><i style="left:1120px;height:40px"></i><i style="left:1148px;height:12px"></i><i style="left:1176px;height:12px"></i><i style="left:1204px;height:12px"></i><i style="left:1232px;height:12px"></i><i style="left:1260px;height:24px"></i><i style="left:1288px;height:12px"></i><i style="left:1316px;height:12px"></i><i style="left:1344px;height:12px"></i><i style="left:1372px;height:12px"></i><i style="left:1400px;height:40px"></i><i style="left:1428px;height:12px"></i><i style="left:1456px;height:12px"></i><i style="left:1484px;height:12px"></i><i style="left:1512px;height:12px"></i><i style="left:1540px;height:24px"></i><i style="left:1568px;height:12px"></i><i style="left:1596px;height:12px"></i><i style="left:1624px;height:12px"></i><i style="left:1652px;height:12px"></i></div><div class="needle"></div>
   <div class="pad" style="top:300px">
